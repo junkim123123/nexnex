@@ -248,12 +248,30 @@ except Exception as e:
     status_text.text("❌ Analysis failed")
     
     # Show error with retry option
-    handle_error_with_retry_button(
+    error_info = handle_error_with_retry_button(
         error=e,
-        context="AI Analysis",
-        retry_callback=lambda: st.session_state.update({'analysis_status': None})
+        retry_callback=lambda: st.session_state.update({'analysis_status': None}),
+        lang="ko"
     )
     
-    if st.button("← Back to Analyze"):
-        st.switch_page("pages/Analyze.py")
+    # Display error information
+    st.error(f"**{error_info['title']}**")
+    st.warning(error_info['message'])
+    
+    if error_info.get('suggestion'):
+        st.info(f"💡 {error_info['suggestion']}")
+    
+    # Retry button if applicable
+    if error_info.get('can_retry') and error_info.get('retry_callback'):
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 다시 시도", type="primary"):
+                error_info['retry_callback']()
+                st.rerun()
+        with col2:
+            if st.button("← Analyze로 돌아가기"):
+                st.switch_page("pages/Analyze.py")
+    else:
+        if st.button("← Analyze로 돌아가기"):
+            st.switch_page("pages/Analyze.py")
 
