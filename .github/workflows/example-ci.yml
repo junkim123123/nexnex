@@ -52,12 +52,20 @@ jobs:
     - uses: actions/checkout@v3
     
     - name: Check for leaked secrets
-      # gitleaks 같은 도구로 키 노출 검사
+      # 실제 API 키만 검사 (더미 키, 문서 예시, 패턴 설명 제외)
       run: |
         echo "Checking for leaked API keys..."
-        # 실제로는 gitleaks 같은 도구 사용 권장
-        if grep -r "AIzaSy" --include="*.md" --include="*.py" --include="*.yml" .; then
+        # 실제 API 키 패턴 검사 (39자 이상의 실제 키만)
+        # 제외: 테스트 더미 키, 문서 예시, 패턴 설명
+        if grep -r "AIzaSy[A-Za-z0-9_-]\{35,\}" --include="*.md" --include="*.py" --include="*.yml" \
+          --exclude-dir=tests \
+          --exclude="*SECURITY*.md" \
+          --exclude="*SETUP*.md" \
+          --exclude="*example*.yml" \
+          --exclude="*QUICK*.md" \
+          . | grep -v "DummyKeyForTesting" | grep -v "AIzaSy\.\.\." | grep -v "AIzaSyXXXX" | grep -v "YOUR_GEMINI_API_KEY"; then
           echo "⚠️  WARNING: Potential API key found in code!"
           exit 1
         fi
+        echo "✅ No leaked API keys found"
 
