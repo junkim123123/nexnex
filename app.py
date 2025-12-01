@@ -550,9 +550,13 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     with nav_col2:
-        if st.button("🚀 Start Free Analysis", use_container_width=True, type="primary"):
-            st.session_state.show_email_form = True
-            st.rerun()
+        if st.button("🚀 Start", use_container_width=True, type="primary"):
+            if not st.session_state.get('user_email'):
+                st.session_state['show_landing'] = False
+                st.session_state['show_email_page'] = True
+                st.rerun()
+            else:
+                st.switch_page("pages/Analyze.py")
     
     # Hero Section - Using Streamlit Columns for Reliable Rendering
     st.markdown("""
@@ -771,13 +775,15 @@ def main():
             </style>
             """, unsafe_allow_html=True)
             
-            # Button - Start a Free Shipment Analysis (consistent CTA)
-            if st.button("Start a Free Shipment Analysis", use_container_width=True, type="primary", key="hero_analyze_btn", disabled=False):
-                # Show email form to begin the analysis process
-                st.session_state.show_email_form = True
-                if hero_product_input and len(hero_product_input.strip()) >= 10:
-                    st.session_state.user_input = hero_product_input.strip()
-                st.rerun()
+            # Button - Start (consistent CTA)
+            if st.button("🚀 Start", use_container_width=True, type="primary", key="hero_analyze_btn", disabled=False):
+                # 이메일 수집 페이지로 이동
+                if not st.session_state.get('user_email'):
+                    st.session_state['show_landing'] = False
+                    st.session_state['show_email_page'] = True
+                    st.rerun()
+                else:
+                    st.switch_page("pages/Analyze.py")
     
     with hero_col_right:
         # Dashboard Card - Render using components.html in iframe (guaranteed DOM rendering)
@@ -1058,9 +1064,13 @@ def main():
     
     col_cta1, col_cta2, col_cta3 = st.columns([1, 2, 1])
     with col_cta2:
-        if st.button("Start a Free Shipment Analysis", use_container_width=True, type="primary", key="footer_cta"):
-            st.session_state.show_email_form = True
-            st.rerun()
+        if st.button("🚀 Start", use_container_width=True, type="primary", key="footer_cta"):
+            if not st.session_state.get('user_email'):
+                st.session_state['show_landing'] = False
+                st.session_state['show_email_page'] = True
+                st.rerun()
+            else:
+                st.switch_page("pages/Analyze.py")
     
     # Footer
     st.markdown("""
