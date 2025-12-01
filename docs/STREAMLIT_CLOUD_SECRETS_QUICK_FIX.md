@@ -22,9 +22,9 @@ authorized_users = [
 ]
 
 [external_api]
-gemini_api_key = "AIzaSyBXVp9Jjd1W6lXD3RE9Z_HWGXT4RvYAHuA"
+gemini_api_key = "YOUR_GEMINI_API_KEY_HERE"
 
-GEMINI_API_KEY = "AIzaSyBXVp9Jjd1W6lXD3RE9Z_HWGXT4RvYAHuA"
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"
 GEMINI_MODEL = "gemini-2.5-flash"
 
 [connections.postgresql]
@@ -50,7 +50,7 @@ LOG_LEVEL = "INFO"
 - "새우깡 5,000봉지 미국에 4달러에 팔거야" 입력 테스트
 
 ## ⚠️ 중요 사항
-- API 키는 **따옴표 안에** 넣어야 합니다: `"AIzaSyBXVp9Jjd1W6lXD3RE9Z_HWGXT4RvYAHuA"`
+- API 키는 **따옴표 안에** 넣어야 합니다: `"YOUR_GEMINI_API_KEY_HERE"`
 - `[external_api]` 섹션과 루트 레벨 `GEMINI_API_KEY` 둘 다 설정하는 것을 권장합니다
 - Secrets 저장 후 앱이 자동으로 재배포되므로 수동 재배포는 필요 없습니다
 

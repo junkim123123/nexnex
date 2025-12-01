@@ -9,7 +9,7 @@
 1. [Google AI Studio](https://aistudio.google.com/app/apikey)에 접속
 2. Google 계정으로 로그인
 3. "Create API Key" 버튼 클릭
-4. 생성된 API 키를 복사 (보통 39자 정도의 `AIzaSy...` 형식)
+4. 생성된 API 키를 복사 (보통 39자 정도의 `AIzaSy...` 형식, 예: `AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`)
    **⚠️ 중요**: 절대 이 키를 코드나 문서에 직접 작성하지 마세요!
 
 ### 2. .env 파일 수정하기
