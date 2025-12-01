@@ -9,13 +9,13 @@ ShipmentSpec을 받아서 AnalysisResult를 생성하는 순수 Python 모듈
 - 리스크 스코어링 통합
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 import logging
 from core.models import ShipmentSpec, AnalysisResult, CostBreakdown, ParsedInput, RiskLevel
 from core.business_rules import calculate_estimated_costs, assess_risk_level
 from core.errors import NexSupplyError
 from services.analysis_service import enrich_analysis_result, calculate_final_costs
-from core.data_access import get_freight_rate, get_duty_rate, get_extra_costs, get_reference_transactions
+from core.data_access import get_freight_rate, get_duty_rate, get_extra_costs, get_reference_transactions, get_product_pricing_hint
 from core.risk_scoring import compute_risk_scores
 
 logger = logging.getLogger(__name__)
@@ -48,6 +48,11 @@ def run_analysis(spec: ShipmentSpec) -> Dict[str, Any]:
         # Step 2: 데이터 접근 레이어에서 실제 데이터 조회
         data_quality = {"used_fallbacks": []}
         
+        # 상품 가격/마진/세금 힌트 조회
+        pricing_hint = get_product_pricing_hint(spec)
+        if not pricing_hint:
+            data_quality["used_fallbacks"].append("product_pricing")
+        
         # 운임 정보 조회
         freight_rate = get_freight_rate(spec)
         if freight_rate.source == "fallback":
@@ -70,19 +75,38 @@ def run_analysis(spec: ShipmentSpec) -> Dict[str, Any]:
             data_quality["used_fallbacks"].append("reference_transactions")
         
         # Step 3: 비용 계산 (데이터 접근 레이어 우선 사용)
-        retail_price = spec.target_retail_price or 5.0
-        
+        retail_price = spec.target_retail_price
+        if not retail_price and pricing_hint:
+            retail_price = (pricing_hint.typical_retail_price_low_usd + pricing_hint.typical_retail_price_high_usd) / 2
+        elif not retail_price:
+            retail_price = 5.0
+
         # Manufacturing cost (FOB 단가 우선)
-        if spec.fob_price_per_unit and spec.fob_price_per_unit > 0 and spec.fob_price_per_unit < retail_price:
-            manufacturing_cost = spec.fob_price_per_unit
+        manufacturing_cost = spec.fob_price_per_unit
+        if not manufacturing_cost and pricing_hint:
+            manufacturing_cost = (pricing_hint.typical_fob_low_usd + pricing_hint.typical_fob_high_usd) / 2
+        
+        if manufacturing_cost and manufacturing_cost > 0 and manufacturing_cost < retail_price:
+            pass # Use provided manufacturing_cost
         else:
-            # Fallback: 기존 로직 사용
-            temp_breakdown = calculate_estimated_costs(
-                user_input=f"{spec.product_name} {spec.quantity} {spec.unit_type}",
-                retail_price=retail_price,
-                volume=normalized_quantity
-            )
-            manufacturing_cost = temp_breakdown.get('manufacturing', 0)
+            if pricing_hint:
+                 manufacturing_cost = (pricing_hint.typical_fob_low_usd + pricing_hint.typical_fob_high_usd) / 2
+            else:
+                # Fallback: 기존 로직 사용
+                temp_breakdown = calculate_estimated_costs(
+                    user_input=f"{spec.product_name} {spec.quantity} {spec.unit_type}",
+                    retail_price=retail_price,
+                    volume=normalized_quantity
+                )
+                manufacturing_cost = temp_breakdown.get('manufacturing', 0)
+        
+        if pricing_hint:
+            if spec.fob_price_per_unit:
+                if not (pricing_hint.typical_fob_low_usd <= spec.fob_price_per_unit <= pricing_hint.typical_fob_high_usd):
+                    spec.data_warnings.append("Provided FOB price is outside the typical range.")
+            if spec.target_retail_price:
+                if not (pricing_hint.typical_retail_price_low_usd <= spec.target_retail_price <= pricing_hint.typical_retail_price_high_usd):
+                    spec.data_warnings.append("Provided retail price is outside the typical range.")
         
         # Shipping cost (데이터 접근 레이어 사용)
         # 간단한 추정: weight_kg 계산 (기존 로직 활용)
@@ -157,6 +181,7 @@ def run_analysis(spec: ShipmentSpec) -> Dict[str, Any]:
         unit_ddp_best = best_final.get('unit_ddp', 0)
         unit_ddp_worst = worst_final.get('unit_ddp', 0)
         
+        
         cost_scenarios = {
             "base": unit_ddp_base,
             "best": unit_ddp_best,
@@ -164,7 +189,7 @@ def run_analysis(spec: ShipmentSpec) -> Dict[str, Any]:
         }
         
         # Step 5: 리스크 스코어링
-        risk_scores = compute_risk_scores(spec, cost_scenarios, data_quality)
+        risk_scores = compute_risk_scores(spec, cost_scenarios, data_quality, pricing_hint)
         
         # Step 6: 기존 리스크 평가 (하위 호환성)
         risk_level, risk_notes = assess_risk_level(
@@ -243,7 +268,7 @@ def run_analysis(spec: ShipmentSpec) -> Dict[str, Any]:
 
 def _estimate_weight(spec: ShipmentSpec, quantity: int) -> float:
     """
-    제품 무게 추정 (기존 business_rules.py 로직 활용)
+    제품 무게 추정 (Phase 5: product_category 우선 사용)
     
     Args:
         spec: ShipmentSpec 인스턴스
@@ -252,11 +277,22 @@ def _estimate_weight(spec: ShipmentSpec, quantity: int) -> float:
     Returns:
         총 무게 (kg)
     """
+    # Phase 5: product_category가 있으면 우선 사용
+    if spec.product_category:
+        category_weights = {
+            'korean_snack': 0.1,  # 과자류: 100g
+            'korean_ramen': 0.12,  # 라면: 120g
+            'korean_confectionery': 0.15,  # 제과류: 150g
+        }
+        weight_per_unit = category_weights.get(spec.product_category)
+        if weight_per_unit:
+            return weight_per_unit * quantity
+    
+    # Fallback: 기존 키워드 매칭
     from core.business_rules import PRODUCT_KEYWORD_DATABASE
     
     product_lower = spec.product_name.lower()
     
-    # 키워드 매칭
     best_match = "default"
     for keyword in PRODUCT_KEYWORD_DATABASE:
         if keyword in product_lower:

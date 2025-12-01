@@ -18,8 +18,8 @@ def process_reference_transactions_data():
         df = pd.read_csv(config.REFERENCE_TRANSACTIONS_FILE)
 
         # Basic data normalization
-        df['fob_price_usd'] = df['fob_price_usd'].astype(float)
-        df['quantity'] = df['quantity'].astype(int)
+        df['fob_price_per_unit'] = df['fob_price_per_unit'].astype(float)
+        df['volume'] = df['volume'].astype(int)
         df['transaction_date'] = pd.to_datetime(df['transaction_date'])
 
         # Save the processed data to a new CSV file

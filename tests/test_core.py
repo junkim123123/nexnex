@@ -120,11 +120,13 @@ class TestSecureLogging:
         handler.setFormatter(logging.Formatter('%(message)s'))
         logger.addHandler(handler)
         
-        logger.info("API key: AIzaSyBgMc5wI9HpbgfQKcZykcYpItmDiDaR9r4")
+        # Use a dummy API key for testing (never use real keys in tests)
+        dummy_api_key = "AIzaSyDummyKeyForTesting12345678901234567890"
+        logger.info(f"API key: {dummy_api_key}")
         log_output = log_capture.getvalue()
         
         # API key should be masked
-        assert "AIza****" in log_output or "AIzaSyBgMc5wI9HpbgfQKcZykcYpItmDiDaR9r4" not in log_output, \
+        assert "AIza****" in log_output or dummy_api_key not in log_output, \
             "API key should be masked in logs"
 
 

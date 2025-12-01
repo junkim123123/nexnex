@@ -17,11 +17,19 @@ PRODUCT_KEYWORD_DATABASE: Dict[str, Dict[str, Any]] = {
     "pen": {"weight_kg": 0.05, "manufacturing_cost_pct": 0.15, "origin": "China", "hs_code": "9608.10"},
     "yoga mat": {"weight_kg": 1.5, "manufacturing_cost_pct": 0.25, "origin": "India", "hs_code": "3921.19"},
     "gummy candy": {"weight_kg": 0.01, "manufacturing_cost_pct": 0.05, "origin": "Germany", "hs_code": "1704.90"},
-    "새우깡": {"weight_kg": 0.09, "manufacturing_cost_pct": 0.1, "origin": "South Korea", "hs_code": "1905.90"},  # 새우깡 추가
-    "shrimp": {"weight_kg": 0.09, "manufacturing_cost_pct": 0.1, "origin": "South Korea", "hs_code": "1905.90"},  # 새우깡 영어
-    "snack": {"weight_kg": 0.1, "manufacturing_cost_pct": 0.1, "origin": "South Korea", "hs_code": "1905.90"},  # 스낵류
+    # Phase 5: 한국 저가 식품 추가 (더 정확한 무게)
+    "새우깡": {"weight_kg": 0.09, "manufacturing_cost_pct": 0.1, "origin": "South Korea", "hs_code": "1905.90"},
+    "shrimp": {"weight_kg": 0.09, "manufacturing_cost_pct": 0.1, "origin": "South Korea", "hs_code": "1905.90"},
+    "snack": {"weight_kg": 0.1, "manufacturing_cost_pct": 0.1, "origin": "South Korea", "hs_code": "1905.90"},
+    "라면": {"weight_kg": 0.12, "manufacturing_cost_pct": 0.08, "origin": "South Korea", "hs_code": "1902.30"},  # Phase 5: 라면 추가
+    "ramen": {"weight_kg": 0.12, "manufacturing_cost_pct": 0.08, "origin": "South Korea", "hs_code": "1902.30"},
+    "신라면": {"weight_kg": 0.12, "manufacturing_cost_pct": 0.08, "origin": "South Korea", "hs_code": "1902.30"},
+    "불닭": {"weight_kg": 0.12, "manufacturing_cost_pct": 0.08, "origin": "South Korea", "hs_code": "1902.30"},
+    "buldak": {"weight_kg": 0.12, "manufacturing_cost_pct": 0.08, "origin": "South Korea", "hs_code": "1902.30"},
+    "초코파이": {"weight_kg": 0.15, "manufacturing_cost_pct": 0.12, "origin": "South Korea", "hs_code": "1905.32"},
+    "chocopie": {"weight_kg": 0.15, "manufacturing_cost_pct": 0.12, "origin": "South Korea", "hs_code": "1905.32"},
     "rocket": {"weight_kg": 549000, "manufacturing_cost_pct": 0.8, "origin": "USA", "hs_code": "8802.60"},
-    "sand": {"weight_kg": 1.0, "manufacturing_cost_pct": 0.01, "origin": "USA", "hs_code": "2505.10"}, # Per kg
+    "sand": {"weight_kg": 1.0, "manufacturing_cost_pct": 0.01, "origin": "USA", "hs_code": "2505.10"},
     "default": {"weight_kg": 0.5, "manufacturing_cost_pct": 0.3, "origin": "China", "hs_code": "0000.00"},
 }
 
@@ -132,7 +140,8 @@ def assess_risk_level(
     risk_score = 0
     notes = []
     
-    unit_cost = sum(cost_breakdown.values())
+    # 숫자 값만 합산 (currency 같은 문자열 제외)
+    unit_cost = sum(v for v in cost_breakdown.values() if isinstance(v, (int, float)))
     
     if unit_cost > 100:
         risk_score += 2

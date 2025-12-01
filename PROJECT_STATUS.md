@@ -245,11 +245,158 @@ This document tracks the progress of the overnight project upgrade. The goal is 
 3. **Base/Best/Worst 시나리오**: 비용 변동성 시각화
 4. **Supabase 통합 준비**: 추상 인터페이스로 설계
 
-### 다음 단계 (Phase 3+)
+---
 
-1. **Supabase 통합**: `DataAccessLayer`에 Supabase 클라이언트 추가
-2. **CSV 데이터 채우기**: Roo + Gemini로 실제 시장 데이터 수집
-3. **머신러닝 기반 리스크 스코어링**: 휴리스틱 → ML 모델로 전환
+## **Phase 4: NLP 기본값 수정 & Streamlit UI 연결 - ✅ COMPLETED (2025-01-XX)**
+*Goal: 한국→미국 시나리오 기본값 수정 및 새로운 엔진 필드 UI 연결*
+
+### 변경 사항 요약
+
+#### 1. NLP 파서 한국 제품 기본값 수정 (`core/nlp_parser.py`)
+- **한국 제품 키워드 감지**: "새우깡", "농심", "초코파이", "오리온", "삼양", "불닭", "라면" 등
+- **Origin 기본값 로직**:
+  1. 명시적 키워드 감지 (한국/중국/미국)
+  2. "from X to Y" 패턴 추출
+  3. 한국 제품 키워드 감지 → "South Korea"
+  4. 기본값: 한국 제품이면 "South Korea", 아니면 "China"
+- **Destination 추출 함수 추가**: `_extract_destination_country()`
+
+#### 2. Streamlit UI 새로운 엔진 필드 연결 (`pages/Results.py`)
+- **Cost Scenarios 표시**: Base/Best/Worst 케이스 통합
+- **Risk Scores 표시**:
+  - Success Probability (퍼센트)
+  - Overall Risk Score (0-100)
+  - 4가지 Sub-risk Scores (진행 바)
+- **Data Quality 탭 추가**:
+  - 데이터 소스 표시 (CSV/Supabase/Fallback)
+  - Fallback 사용 항목 경고
+  - 유사 거래 데이터 개수
+
+#### 3. 디버그 모드 추가 (`pages/Results.py`)
+- **사이드바 체크박스**: "Show debug info"
+- **쿼리 파라미터**: `?debug=1`
+- **표시 내용**: ShipmentSpec, AnalysisResult JSON
+
+#### 4. Analyze_Results 페이지 개선 (`pages/Analyze_Results.py`)
+- 새로운 분석 엔진 우선 사용
+- 에러 처리 강화 (try/except)
+- shipment_spec 세션 상태 저장
+
+### 테스트 결과
+
+**입력**: "새우깡 5,000봉지 미국에 4달러에 팔거야"
+- ✅ Origin: South Korea (수정 완료)
+- ✅ Destination: United States (수정 완료)
+- ✅ Landed Cost: $0.47/unit
+- ✅ Margin: 88.3%
+- ✅ Success Probability: 63.8%
+
+**발견된 이슈**:
+- ⚠️ 저가 제품($1-5)의 랜디드 코스트가 비현실적으로 높게 계산됨 (신라면 케이스)
+- ⚠️ 통화 파싱 실패 (유로, 엔)
+- ⚠️ 규제 리스크 과소평가 (매운맛 제품)
+
+### 다음 단계 (Phase 5)
+
+1. **랜디드 코스트 계산 오류 수정**: 저가 제품의 비용 계산 로직 개선
+2. **통화 파싱 지원**: 유로, 엔 등 다중 통화 지원
+3. **규제 리스크 개선**: 식품 제품의 compliance_risk 정확도 향상
+
+---
+
+## **Phase 4 (이전): Supabase 통합 & 자동 테스트 - ✅ COMPLETED (2025-01-XX)**
+*Goal: Supabase 통합 완성 및 회귀 테스트 자동화*
+
+### 변경 사항 요약
+
+#### 1. Supabase 통합 완성 (`core/data_access.py`)
+- **SupabaseDataAccessLayer의 TODO 부분 실제 구현**
+  - `get_freight_rate()`: Supabase 쿼리 구현
+  - `get_duty_rate()`: Supabase 쿼리 구현
+  - `get_extra_costs()`: Supabase 쿼리 구현
+  - `get_reference_transactions()`: Supabase 쿼리 구현
+
+- **get_data_access() 환경변수 기반 동작**
+  - `SUPABASE_URL`, `SUPABASE_KEY`가 설정되어 있으면 `SupabaseDataAccessLayer` 사용
+  - 설정 안 되어 있으면 CSV 기반 `DataAccessLayer` 사용
+  - 두 모드 모두 같은 인터페이스로 동작
+
+#### 2. Supabase 테이블 생성 SQL 문서화 (`docs/supabase_setup.md`)
+- **4개 테이블 생성 SQL**:
+  - `freight_rates`: 운임 정보
+  - `duty_rates`: 관세 정보
+  - `extra_costs`: 부대비용
+  - `reference_transactions`: 유사 거래 데이터
+
+- **인덱스 및 샘플 데이터 포함**
+- **Row Level Security (RLS) 설정 가이드**
+- **CSV에서 Supabase로 마이그레이션 스크립트 예시**
+
+#### 3. 자동/회귀 테스트 (`tests/test_sample_flows.py`)
+- **pytest 기반 회귀 테스트 작성**
+  - `test_shrimp_snack_analysis()`: "새우깡 5,000봉지 미국에 4달러" 입력 검증
+  - FOB 단가 검증 (retail price보다 크지 않아야 함)
+  - `risk_scores` 및 `cost_scenarios` 포함 여부 체크
+  - `data_quality` 필드 검증
+
+- **추가 테스트 케이스**:
+  - `TestDataQuality`: 데이터 품질 추적 테스트
+  - `TestCostScenarios`: 비용 시나리오 순서 및 값 검증
+  - `TestRiskScores`: 리스크 스코어 범위 및 일관성 검증
+
+- **GitHub Actions 호환**: `pytest` 기준으로 구성
+
+### 주요 개선 사항
+
+1. **Supabase ON/OFF 두 모드 지원**
+   - 환경변수만으로 전환 가능
+   - 같은 인터페이스로 동작 (투명한 fallback)
+
+2. **회귀 테스트 자동화**
+   - 핵심 기능이 망가지지 않았는지 빠르게 확인
+   - CI/CD 파이프라인에 통합 가능
+
+3. **Supabase 설정 가이드 완성**
+   - 테이블 생성부터 샘플 데이터까지 포함
+   - Roo/Gemini 에이전트가 바로 사용 가능
+
+### 사용 방법
+
+#### Supabase 모드 활성화
+```bash
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_KEY="your-anon-key"
+python scripts/run_sample_analysis.py "새우깡 5,000봉지 미국에 4달러에 팔거야"
+```
+
+#### CSV 모드 (기본)
+```bash
+# 환경변수 설정 안 하면 자동으로 CSV 모드
+python scripts/run_sample_analysis.py "새우깡 5,000봉지 미국에 4달러에 팔거야"
+```
+
+#### 테스트 실행
+```bash
+# 모든 테스트 실행
+pytest tests/test_sample_flows.py -v
+
+# 특정 테스트만 실행
+pytest tests/test_sample_flows.py::TestSampleFlows::test_shrimp_snack_analysis -v
+```
+
+### 다음 단계 (Phase 5+)
+
+1. **GitHub Actions 통합**
+   - CI/CD 파이프라인에 회귀 테스트 추가
+   - PR마다 자동 테스트 실행
+
+2. **Supabase 데이터 적재 자동화**
+   - Roo/Gemini 에이전트가 주기적으로 데이터 업데이트
+   - 데이터 품질 모니터링
+
+3. **성능 최적화**
+   - Supabase 쿼리 최적화
+   - 캐싱 전략 추가
 
 ---
 
@@ -455,3 +602,198 @@ This document tracks the progress of the overnight project upgrade. The goal is 
 - 공격적인 톤이 일부 유저에게 부정적일 수 있음 (A/B 테스트 필요)
 - 경쟁사 비교 데이터가 실제 데이터가 아닐 수 있음 (현재는 추정값)
 - "질투 자극"이 너무 강하면 신뢰도 하락 가능성
+
+---
+
+## [2025-12-01] Product Unit Economics Data Layer Automation
+
+**What changed**
+- **Designed and implemented a new data schema** for product-specific pricing, margins, and taxes (`data/product_pricing.csv`).
+- **Created a script to populate the new dataset** with realistic synthetic data for key product categories and routes (`scripts/populate_product_pricing.py`).
+- **Integrated the new data layer into the analysis engine** (`core/analysis_engine.py`) to provide more accurate FOB and retail price estimates.
+- **Enhanced the risk scoring model** (`core/risk_scoring.py`) to use the pricing data for sanity checks and more accurate risk assessment.
+- **Developed a semi-automated calibration routine** (`scripts/run_pricing_calibration.py`) to detect implausible analysis results and report them.
+- **Updated all relevant documentation** to reflect the new data layer and its strategic importance (`docs/DATA_QUALITY_REPORT.md`, `docs/analysis_pipeline.md`, `docs/B2B_AUTOMATION_LEARNING.md`).
+
+**Next TODOs**
+- Expand the `product_pricing.csv` dataset with more product categories and routes.
+- Refine the calibration script to provide more detailed insights.
+- Begin migrating the CSV-based data access to a more robust database solution like Supabase.
+
+**Risks / Questions**
+- The synthetic data, while realistic, is still based on heuristics and may not accurately reflect all market conditions.
+- The calibration routine currently only flags issues; it does not yet provide automated suggestions for correction.
+
+---
+
+## [2025-01-XX] Results Page UX Polish - DDP / Risk Report Style (Auto-Mode ON)
+
+**What changed**
+- ✅ **Results page redesigned as "DDP / Risk Report"**:
+  - Header changed from "Quick Summary" to "DDP / Risk Report" with timestamp
+  - Clear one-line summary at top (Good/OK/Risky deal) maintained
+  - Cost breakdown table improved with clearer labels (FOB/Manufacturing, Freight/Shipping, Duty/Tariffs, Extra Costs/Misc, DDP per Unit)
+  - Table includes descriptions for each cost component
+  
+- ✅ **Data Quality section enhanced**:
+  - Data source status table showing CSV/product_pricing vs fallback for each data point
+  - Clear visual indicators (✅ for real data, ⚠️ for fallback)
+  - Summary message showing count of fallbacks used
+  - Reference transaction count displayed
+  
+- ✅ **Debug view improved**:
+  - Debug toggle supports both `?debug=1` and `?debug=true` query parameters
+  - Debug view shows ShipmentSpec and AnalysisResult side-by-side in columns
+  - Better labeling and organization
+
+**Technical Details**
+- All changes are UI-only, no core engine modifications
+- JSON response shape from `run_analysis()` remains unchanged
+- Backward compatible with existing session state structure
+- Uses existing `format_money()` helper function
+
+**Next TODOs**
+- [ ] Add margin & success_probability visualization (progress bars or charts)
+- [ ] Consider adding export functionality (PDF/CSV)
+- [ ] Mobile responsive improvements for the new table layout
+
+**Risks / Questions**
+- Table layout may need adjustment for very long product names or descriptions
+- Debug view columns may be too narrow on smaller screens (consider stacking on mobile)
+
+---
+
+## [2025-01-XX] Meeting-Ready Report UX Upgrade (Final Polish)
+
+**What changed**
+- ✅ **Report Header (Meeting-Ready Style)**:
+  - Product name, route (origin → destination), channel, timestamp 표시
+  - 깔끔한 헤더 레이아웃으로 미팅에서 바로 공유 가능
+  
+- ✅ **Decision-Ready One-Liner Box (강화)**:
+  - 배지 (GOOD PILOT CANDIDATE, GO, CONDITIONAL, NO-GO) + 색상 코딩
+  - 아이콘 (✅, ⚠️, ❌) 추가
+  - 감정적이고 의사결정용 문장으로 변경:
+    - "Strong margin (X%) with high success probability (X%). Suitable for test order."
+    - "Margin is strong (X%) but depends heavily on freight and duty volatility."
+    - "High compliance risk (X/100). Extra review needed."
+  - Margin, Success Probability, Profit per Unit를 한눈에 보는 메트릭 박스
+  
+- ✅ **Cost Breakdown with Stacked Bar Chart**:
+  - Plotly stacked bar chart로 비용 구성 시각화
+  - FOB/Manufacturing (파란색), Freight/Shipping (초록색), Duty/Tariffs (노란색), Extra Costs (빨간색)
+  - 차트 아래 상세 테이블 유지
+  
+- ✅ **Risk Analysis with Radar Chart**:
+  - Plotly radar chart로 4가지 리스크 시각화
+  - 각 리스크별 progress bar + 한 줄 설명 추가:
+    - Price Risk: "Volatility in freight rates and duties"
+    - Lead Time Risk: "Production and shipping delays"
+    - Compliance Risk: "Regulatory and customs issues"
+    - Reputation Risk: "Supplier reliability and quality concerns"
+  
+- ✅ **Meeting-Ready Layout Structure**:
+  1. 헤더 (제품명, 경로, 채널, 타임스탬프)
+  2. 한 줄 요약 박스 (배지, 아이콘, 문장, 메트릭)
+  3. 비용 박스 (stacked bar 차트 + 테이블)
+  4. 리스크 박스 (radar 차트 + 상세 점수)
+  5. Data Quality 박스 (기존 유지, 전문가용)
+
+**Technical Details**
+- Plotly charts 사용 (이미 import되어 있음)
+- 모든 변경은 UI-only, core engine 수정 없음
+- JSON response shape 유지
+- 미팅에서 PDF로 공유 가능한 퀄리티
+
+**Next TODOs (Product Manager Instructions)**
+- [ ] Roo에게: 새 카테고리와 국가 추가 (농심 컵라면 JP/US, 초콜릿/젤리 EU)
+- [ ] Roo에게: 기준 브랜드 FOB/리테일/마진 벤치마크 라인 추가
+- [ ] Roo에게: KR→US 스낵 기준 리스크 스코어 캘리브레이션 정교화 (매우 매운 소스는 컴플라이언스 리스크 상향)
+- [ ] Cursor에게: Analyze 입력 페이지 예시/placeholder/설명 문구 추가 (초보자 친화)
+- [ ] Cursor에게: 디버그 모드를 개발자용 토글로 숨기기 (일반 사용자에게는 보이지 않게)
+
+**Risks / Questions**
+- Radar chart가 모바일에서 제대로 표시되는지 확인 필요
+- Stacked bar chart의 텍스트 오버랩 가능성 (값이 작을 때)
+- PDF export 기능 추가 고려 (Streamlit의 기본 기능으로는 제한적)
+
+---
+
+## [2025-01-XX] Y Combinator Feedback Implementation
+
+**What changed (YC 관점 피드백 반영)**
+
+- ✅ **First-Time User Experience (YC Feedback #1)**:
+  - Analyze 페이지에 "⚡ Try it now" 버튼 추가 (샘플 입력 자동 채우기)
+  - 첫 방문자에게 자동으로 예시 입력 채워주기
+  - "First time? We've filled in an example for you" 안내 메시지
+  
+- ✅ **Differentiation 명확화 (YC Feedback #7)**:
+  - Results 페이지 상단에 "Why this analysis is different" 박스 추가
+  - "AI + real market data from X similar transactions" 강조
+  - "Not just Excel formulas" 차별화 포인트 명시
+  
+- ✅ **Product-Market Fit 신호 강화 (YC Feedback #2)**:
+  - "💾 Save Analysis" 버튼 추가 (재사용 유도)
+  - 분석 히스토리 저장 기능 (session state, 향후 DB 연동)
+  - "Save to compare different scenarios" 안내
+  
+- ✅ **Trust & Credibility 강화 (YC Feedback #4)**:
+  - Data Quality 테이블에 데이터 출처 및 업데이트 날짜 표시
+  - "CSV/product_pricing (2024 Q4)" 형식으로 명확한 출처 표기
+  - "Real market data" vs "Heuristic estimate" 구분
+  
+- ✅ **Actionability 개선 (YC Feedback #5)**:
+  - "Next Steps (Action Checklist)" 섹션 추가
+  - 체크리스트 형식으로 다음 액션 명시
+  - 협상 이메일 템플릿에 "📋 Copy" 버튼 추가
+
+**YC 관점 개선 효과**
+
+1. **30초 가치 전달**: 첫 방문자가 즉시 예시 분석을 볼 수 있음
+2. **차별화 명확화**: Excel 대비 AI + 실제 데이터 기반 분석임을 강조
+3. **재사용 유도**: Save 기능으로 매일 쓰는 툴로 전환 가능
+4. **신뢰성 향상**: 데이터 출처 투명하게 표시
+5. **액션 가능성**: 체크리스트로 "다음에 뭘 해야 하지?" 해결
+
+**Next TODOs (Remaining YC Feedback)**
+
+- [ ] Mobile Experience 개선 (YC Feedback #3) - 기본은 되어 있으나 추가 최적화
+- [ ] Onboarding Flow: "How it works" 3단계 설명 (YC Feedback #8)
+- [ ] Social Proof: Success Stories 섹션 (YC Feedback #9)
+- [ ] Monetization Signal: Free vs Pro 구분 (YC Feedback #10)
+- [ ] Performance: 진행 상황 더 명확하게 (YC Feedback #6)
+
+**Risks / Questions**
+- "Try it now" 버튼이 JavaScript 기반이라 Streamlit에서 완벽하게 작동하지 않을 수 있음 (대안: Streamlit 버튼으로 변경)
+- Save 기능이 현재 session state만 사용하므로 페이지 새로고침 시 사라짐 (향후 DB 연동 필요)
+
+---
+
+## [2025-01-XX] UX Focused Improvements (Auto-Mode ON)
+
+**What changed**
+- ✅ **Analyze.py UX 개선**:
+  - 입력 필드 레이블 및 도움말 텍스트 개선
+  - 템플릿 버튼에 아이콘 추가 및 설명 개선
+  - 버튼 비활성화 시 명확한 피드백 제공
+  - 텍스트 영역 위에 팁 추가
+  
+- ✅ **Analyze_Results.py UX 개선**:
+  - 로딩 화면에 분석 항목 리스트 추가 (landed cost, profit margin, risk, success probability)
+  - 진행 상태 업데이트 시 시각적 피드백 강화
+  - 힌트 박스 스타일 개선 (배경색, 테두리, 패딩)
+  
+- ✅ **Results.py UX 개선**:
+  - Quick Summary 섹션에 생성 시간 표시
+  - Key Metrics 섹션에 설명 텍스트 추가
+  - 시각적 계층 구조 개선 (그림자, 간격)
+
+**Next TODOs**
+- [ ] 추가 시각적 피드백 (애니메이션, 트랜지션)
+- [ ] 접근성 개선 (키보드 네비게이션, 스크린 리더 지원)
+- [ ] 모바일 UX 추가 최적화
+
+**Risks / Questions**
+- 변경 사항이 기존 사용자 플로우에 영향을 주지 않도록 주의
+- 모든 변경은 하위 호환성 유지

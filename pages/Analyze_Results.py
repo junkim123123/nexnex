@@ -35,13 +35,19 @@ if 'shipment_input' not in st.session_state:
 shipment_input = st.session_state.shipment_input
 user_input = shipment_input.get('user_input', '')
 
-# Show loading state with animations
+# Show loading state with improved UX
 st.markdown(LOADING_ANIMATION_CSS, unsafe_allow_html=True)
 st.markdown("""
     <div class="loading-container">
         <div class="loading-spinner"></div>
         <h1 class="loading-title">Analyzing your shipment...</h1>
-        <p class="status-text">This usually takes a few moments. We are running landed cost, risk, and lead time analysis.</p>
+        <p class="status-text">This usually takes 10-20 seconds. We're calculating:</p>
+        <ul style="text-align: left; max-width: 500px; margin: 1rem auto; color: #94a3b8; font-size: 0.9rem;">
+            <li>Landed cost breakdown</li>
+            <li>Profit margin analysis</li>
+            <li>Risk assessment</li>
+            <li>Success probability</li>
+        </ul>
     </div>
 """, unsafe_allow_html=True)
 
@@ -53,18 +59,18 @@ progress_hints = st.empty()
 try:
     # Check if analysis is already running or done
     if st.session_state.get('analysis_status') == 'running':
-        # Helper function for status updates
+        # Helper function for status updates with improved UX
         def update_status(message, progress, color=COLOR_BLUE, hint=None):
             status_text.markdown(f"""
                 <div style="text-align: center; padding: 1rem;">
-                    <p style="font-size: 1.1rem; color: {color}; font-weight: 600;">{message}</p>
+                    <p style="font-size: 1.2rem; color: {color}; font-weight: 600; margin-bottom: 0.5rem;">{message}</p>
                 </div>
             """, unsafe_allow_html=True)
-            progress_bar.progress(progress)
+            progress_bar.progress(progress / 100)
             if hint:
                 progress_hints.markdown(f"""
-                    <div style="text-align: center; padding: 0.5rem;">
-                        <p style="font-size: 0.9rem; color: #64748b;">• {hint}</p>
+                    <div style="text-align: center; padding: 0.75rem; background: rgba(30, 41, 59, 0.3); border-radius: 8px; margin-top: 1rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                        <p style="font-size: 0.9rem; color: #94a3b8; margin: 0;">💡 {hint}</p>
                     </div>
                 """, unsafe_allow_html=True)
         
@@ -97,37 +103,63 @@ try:
         # Step 4: AI Analysis (Phase 1: Use new analysis engine if available)
         update_status(STATUS_ANALYZING, 50, COLOR_CYAN, hint="Checking costs and duties")
         
-        # Phase 1: Try new analysis engine first
+        # Phase 4: Use new analysis engine (parse_user_input + run_analysis)
         result = None
-        if 'shipment_spec' in st.session_state:
-            try:
-                from core.nlp_parser import parse_user_input
-                from core.analysis_engine import run_analysis
-                from core.models import ShipmentSpec
-                
-                # Re-parse to get fresh ShipmentSpec (or use cached one)
-                shipment_spec_dict = st.session_state.get('shipment_spec', {})
-                if shipment_spec_dict:
+        try:
+            from core.nlp_parser import parse_user_input
+            from core.analysis_engine import run_analysis
+            from core.models import ShipmentSpec
+            
+            # Step 3: Parse user input to ShipmentSpec
+            update_status(STATUS_PARSING, 40, COLOR_CYAN, hint="Extracting product details")
+            
+            # Check if we already have a parsed spec, otherwise parse now
+            shipment_spec_dict = st.session_state.get('shipment_spec')
+            if shipment_spec_dict and isinstance(shipment_spec_dict, dict):
+                try:
                     shipment_spec = ShipmentSpec(**shipment_spec_dict)
-                else:
+                except Exception:
+                    # If cached spec is invalid, re-parse
                     shipment_spec = parse_user_input(user_input)
-                
-                # Run analysis
-                result = run_analysis(shipment_spec)
-                
-            except Exception as e:
-                import logging
-                logging.warning(f"Phase 1 analysis engine failed, falling back to legacy: {e}")
-                result = None
-        
-        # Fallback to legacy AI analysis if Phase 1 fails
-        if result is None:
-            from src.ai import analyze_input
-            result = analyze_input(
-                text=user_input,
-                api_key=api_key,
-                use_pipeline=True
-            )
+                    st.session_state['shipment_spec'] = shipment_spec.model_dump()
+            else:
+                # Parse fresh
+                shipment_spec = parse_user_input(user_input)
+                st.session_state['shipment_spec'] = shipment_spec.model_dump()
+            
+            # Step 4: Run analysis with new engine
+            update_status(STATUS_ANALYZING, 60, COLOR_CYAN, hint="Calculating costs and risks")
+            result = run_analysis(shipment_spec)
+            
+        except Exception as e:
+            import logging
+            logging.error(f"New analysis engine failed: {e}", exc_info=True)
+            # User-friendly error message (Customer Service feedback)
+            error_msg = str(e)
+            if "API" in error_msg or "key" in error_msg.lower():
+                user_friendly_msg = "⚠️ API connection issue. Please check your API key settings or try again later."
+            elif "parse" in error_msg.lower() or "input" in error_msg.lower():
+                user_friendly_msg = "⚠️ Could not understand your input. Please try rephrasing with more details (product name, quantity, origin, destination, price)."
+            elif "timeout" in error_msg.lower():
+                user_friendly_msg = "⏱️ The analysis is taking longer than expected. Please try again in a moment."
+            else:
+                user_friendly_msg = "⚠️ Something went wrong during analysis. Please try again or contact support if the issue persists."
+            
+            # Fallback to legacy AI analysis if new engine fails
+            update_status(user_friendly_msg, 50, COLOR_CYAN)
+            try:
+                from src.ai import analyze_input
+                result = analyze_input(
+                    text=user_input,
+                    api_key=api_key,
+                    use_pipeline=True
+                )
+            except Exception as fallback_error:
+                logging.error(f"Legacy analysis also failed: {fallback_error}")
+                # Show final user-friendly error
+                st.error(f"❌ **Analysis Failed**: {user_friendly_msg}")
+                st.info("💡 **Tips to fix this**:\n- Check your internet connection\n- Verify your input includes: product name, quantity, origin country, destination country, and target price\n- Try refreshing the page")
+                raise fallback_error
         
         elapsed_time = time.time() - start_time
         
@@ -151,6 +183,51 @@ try:
         # Store result in session state
         st.session_state['analysis_result'] = result
         st.session_state['analysis_status'] = 'done'
+        
+        # Phase 4: Store shipment_spec if we have it
+        if 'shipment_spec' not in st.session_state and 'shipment_spec' in locals():
+            st.session_state['shipment_spec'] = shipment_spec.model_dump()
+        
+        # PostgreSQL: Save analysis log to database
+        try:
+            from utils.postgres_db import insert_analysis_log, is_postgresql_available
+            
+            if is_postgresql_available():
+                # Extract data from result for logging
+                cost_breakdown = result.get("cost_breakdown", {})
+                profitability = result.get("profitability", {})
+                risk_scores = result.get("risk_scores", {})
+                data_quality = result.get("data_quality", {})
+                
+                # Insert analysis log
+                log_id = insert_analysis_log(
+                    user_input=user_input,
+                    product_name=shipment_spec.product_name if hasattr(shipment_spec, 'product_name') else None,
+                    origin_country=shipment_spec.origin_country if hasattr(shipment_spec, 'origin_country') else None,
+                    destination_country=shipment_spec.destination_country if hasattr(shipment_spec, 'destination_country') else None,
+                    quantity=shipment_spec.quantity if hasattr(shipment_spec, 'quantity') else None,
+                    target_retail_price=float(shipment_spec.target_retail_price) if hasattr(shipment_spec, 'target_retail_price') and shipment_spec.target_retail_price else None,
+                    target_retail_currency=getattr(shipment_spec, 'target_retail_currency', 'USD') if hasattr(shipment_spec, 'target_retail_currency') else 'USD',
+                    landed_cost_per_unit=float(cost_breakdown.get('total_landed_cost', 0)) if cost_breakdown.get('total_landed_cost') else None,
+                    net_margin_percent=float(profitability.get('net_profit_percent', 0)) if profitability.get('net_profit_percent') else None,
+                    success_probability=float(risk_scores.get('success_probability', 0)) if risk_scores.get('success_probability') else None,
+                    overall_risk_score=int(risk_scores.get('overall_risk_score', 0)) if risk_scores.get('overall_risk_score') else None,
+                    price_risk=int(risk_scores.get('price_risk', 0)) if risk_scores.get('price_risk') else 0,
+                    lead_time_risk=int(risk_scores.get('lead_time_risk', 0)) if risk_scores.get('lead_time_risk') else 0,
+                    compliance_risk=int(risk_scores.get('compliance_risk', 0)) if risk_scores.get('compliance_risk') else 0,
+                    reputation_risk=int(risk_scores.get('reputation_risk', 0)) if risk_scores.get('reputation_risk') else 0,
+                    verdict=result.get("verdict") or result.get("risk_analysis", {}).get("level", "Unknown"),
+                    used_fallbacks=data_quality.get('used_fallbacks', []),
+                    reference_transaction_count=data_quality.get('reference_transaction_count', 0),
+                    full_result=result,
+                    status="success"
+                )
+                
+                if log_id:
+                    logging.info(f"Analysis log saved to PostgreSQL: {log_id}")
+        except Exception as db_error:
+            # PostgreSQL 로그 저장 실패해도 앱은 계속 진행
+            logging.warning(f"Failed to save analysis log to PostgreSQL: {db_error}")
         
         # Small delay before redirect
         time.sleep(0.3)

@@ -1,0 +1,5 @@
+product_category,origin,destination,fob_price_per_unit,landed_cost_per_unit,volume,transaction_date
+KR snack - shrimp chips,South Korea,United States,0.35,0.55,10000,2025-10-15
+KR ramen,South Korea,United States,0.55,0.80,20000,2025-10-20
+korean_confectionery,South Korea,Germany,1.10,2.50,5000,2025-10-25
+CN electronics - low value,China,United States,4.50,7.50,2000,2025-11-01

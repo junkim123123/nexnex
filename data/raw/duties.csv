@@ -1,5 +1,15 @@
-hs_code,description,duty_rate_percent,country
-8517.12,"Telephones for cellular networks or for other wireless networks",0,USA
-8471.30,"Portable automatic data processing machines, weighing not more than 10 kg",0,USA
-9504.50,"Video game consoles and machines",0,USA
-6104.19,"Women's or girls' suits, ensembles, suit-type jackets, blazers",11.3,USA
+hs_code,origin_country,duty_rate_percent,section_301_rate_percent
+1905.90,South Korea,0.0,0.0
+1704.90,South Korea,5.6,0.0
+2106.90,South Korea,6.4,0.0
+8543.70,South Korea,0.0,0.0
+9503.00,South Korea,0.0,0.0
+3926.90,South Korea,5.3,0.0
+1905.90,China,10.0,25.0
+1704.90,China,10.0,7.5
+8543.70,China,3.9,25.0
+9503.00,China,0.0,25.0
+3926.90,China,5.3,25.0
+1905.90,Germany,0.0,0.0
+1704.90,Germany,8.0,0.0
+1905.90,Japan,0.0,0.0

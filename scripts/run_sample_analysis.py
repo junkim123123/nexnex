@@ -36,7 +36,7 @@ def main():
     print("=" * 80)
     print("NexSupply Analysis Engine - CLI Test")
     print("=" * 80)
-    print(f"\n📝 입력: {user_input}\n")
+    print(f"\n입력: {user_input}\n")
     print("-" * 80)
     
     try:
@@ -45,14 +45,14 @@ def main():
         print("-" * 80)
         spec = parse_user_input(user_input)
         
-        print(f"✅ 파싱 완료:")
+        print(f"파싱 완료:")
         print(f"   - 제품: {spec.product_name}")
         print(f"   - 수량: {spec.quantity:,} {spec.unit_type}")
         print(f"   - 경로: {spec.origin_country} → {spec.destination_country}")
         print(f"   - 소매 가격: ${spec.target_retail_price:.2f}" if spec.target_retail_price else "   - 소매 가격: (미지정)")
         print(f"   - 채널: {spec.channel or '(미지정)'}")
         if spec.data_warnings:
-            print(f"   ⚠️ 경고: {', '.join(spec.data_warnings)}")
+            print(f"   [!] 경고: {', '.join(spec.data_warnings)}")
         
         # Step 2: 분석 실행
         print("\n[2/2] 분석 실행 중...")
@@ -61,19 +61,19 @@ def main():
         
         # Step 3: 결과 출력
         print("\n" + "=" * 80)
-        print("📊 분석 결과")
+        print("분석 결과")
         print("=" * 80)
         
         # 비용 시나리오
         cost_scenarios = result.get('cost_scenarios', {})
-        print(f"\n💰 비용 시나리오 (per unit):")
+        print(f"\n비용 시나리오 (per unit):")
         print(f"   - Base: ${cost_scenarios.get('base', 0):.2f}")
         print(f"   - Best: ${cost_scenarios.get('best', 0):.2f}")
         print(f"   - Worst: ${cost_scenarios.get('worst', 0):.2f}")
         
         # 수익성
         profitability = result.get('profitability', {})
-        print(f"\n💵 수익성:")
+        print(f"\n수익성:")
         print(f"   - 소매 가격: ${profitability.get('retail_price', 0):.2f}")
         print(f"   - 랜디드 코스트: ${profitability.get('unit_ddp', 0):.2f}")
         print(f"   - 순이익: ${profitability.get('net_profit_per_unit', 0):.2f}")
@@ -81,7 +81,7 @@ def main():
         
         # 리스크 스코어
         risk_scores = result.get('risk_scores', {})
-        print(f"\n⚠️ 리스크 스코어:")
+        print(f"\n리스크 스코어:")
         print(f"   - 성공 확률: {risk_scores.get('success_probability', 0):.1%}")
         print(f"   - 전체 리스크: {risk_scores.get('overall_risk_score', 0):.1f}/100")
         print(f"   - 가격 리스크: {risk_scores.get('price_risk', 0):.1f}/100")
@@ -91,34 +91,34 @@ def main():
         
         # 데이터 품질
         data_quality = result.get('data_quality', {})
-        print(f"\n📊 데이터 품질:")
+        print(f"\n데이터 품질:")
         used_fallbacks = data_quality.get('used_fallbacks', [])
         if used_fallbacks:
-            print(f"   ⚠️ Fallback 사용: {', '.join(used_fallbacks)}")
+            print(f"   [!] Fallback 사용: {', '.join(used_fallbacks)}")
         else:
-            print(f"   ✅ 모든 데이터가 실제 데이터 소스에서 조회됨")
+            print(f"   [+] 모든 데이터가 실제 데이터 소스에서 조회됨")
         print(f"   - 유사 거래 데이터: {data_quality.get('reference_transaction_count', 0)}건")
         
         # 전체 JSON 출력 (디버깅용)
         print("\n" + "=" * 80)
-        print("📄 전체 결과 JSON (디버깅용)")
+        print("[+] 전체 결과 JSON (디버깅용)")
         print("=" * 80)
         print(json.dumps(result, indent=2, ensure_ascii=False))
         
         print("\n" + "=" * 80)
-        print("✅ 분석 완료")
+        print("[+] 분석 완료")
         print("=" * 80)
         
         return 0
         
     except ParsingError as e:
-        print(f"\n❌ 파싱 오류: {e}")
+        print(f"\n[!] 파싱 오류: {e}")
         return 1
     except NexSupplyError as e:
-        print(f"\n❌ 분석 오류: {e}")
+        print(f"\n[!] 분석 오류: {e}")
         return 1
     except Exception as e:
-        print(f"\n❌ 예상치 못한 오류: {e}")
+        print(f"\n[!] 예상치 못한 오류: {e}")
         import traceback
         traceback.print_exc()
         return 1

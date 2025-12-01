@@ -30,9 +30,12 @@ ENV/
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
 
 # Streamlit
 .streamlit/secrets.toml
+.streamlit/config.toml
 
 # Database
 *.db

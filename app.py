@@ -5,6 +5,88 @@ B2B Sourcing Consultant App with Landing Page
 
 import streamlit as st
 import streamlit.components.v1 as components
+import time
+import hashlib
+
+# ============================================================================
+# Authentication (베타 앱 접근 제한)
+# ============================================================================
+
+def check_login() -> bool:
+    """
+    앱 접근 권한을 확인하는 함수
+    
+    Returns:
+        True if user is authenticated, False otherwise
+    """
+    # 세션 상태 초기화
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+        st.session_state['user_email'] = None
+    
+    # 이미 로그인된 경우
+    if st.session_state['logged_in']:
+        return True
+    
+    # 로그인 폼 표시
+    st.title("🔐 NexSupply 베타 접근")
+    st.markdown("""
+        <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; 
+                    padding: 1rem; border-radius: 6px; margin-bottom: 2rem;">
+            <p style="color: #94a3b8; margin: 0; font-size: 0.9rem;">
+                이 앱은 베타 테스트 단계입니다. 인증된 사용자만 접근할 수 있습니다.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    with st.form("login_form", clear_on_submit=False):
+        email = st.text_input("이메일 주소:", placeholder="your-email@example.com")
+        password = st.text_input("비밀번호:", type="password", placeholder="Enter your password")
+        submitted = st.form_submit_button("로그인", use_container_width=True)
+        
+        if submitted:
+            if not email or not password:
+                st.error("이메일과 비밀번호를 모두 입력해주세요.")
+                return False
+            
+            # Secrets에서 인증 정보 확인
+            is_valid = False
+            try:
+                # Streamlit Secrets에서 authorized_users 읽기
+                authorized_users = st.secrets.get('general', {}).get('authorized_users', [])
+                
+                # 사용자 인증 확인
+                for user in authorized_users:
+                    if email == user.get('email') and password == user.get('password'):
+                        st.session_state['logged_in'] = True
+                        st.session_state['user_email'] = email
+                        is_valid = True
+                        break
+                
+                if is_valid:
+                    st.success("✅ 로그인 성공! 잠시 후 앱이 로드됩니다.")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("❌ 이메일 또는 비밀번호가 올바르지 않습니다.")
+            except Exception as e:
+                st.error(f"인증 처리 중 오류가 발생했습니다: {str(e)}")
+                st.info("💡 Streamlit Cloud Secrets에 authorized_users가 설정되어 있는지 확인하세요.")
+    
+    # 로그아웃 버튼 (개발용, 실제로는 필요 없음)
+    st.markdown("---")
+    st.caption("💡 베타 테스트 계정이 필요하신가요? 관리자에게 문의하세요.")
+    
+    return False
+
+
+# 인증 확인 - 로그인되지 않은 경우 여기서 종료
+if not check_login():
+    st.stop()
+
+# ============================================================================
+# Main Application (인증된 사용자만 여기까지 도달)
+# ============================================================================
 
 # Page configuration
 st.set_page_config(
@@ -13,6 +95,22 @@ st.set_page_config(
     page_icon="📦",
     initial_sidebar_state="collapsed"
 )
+
+# 사용자 환영 메시지 (선택사항)
+if st.session_state.get('user_email'):
+    st.sidebar.markdown(f"""
+        <div style="padding: 0.5rem; background: rgba(16, 185, 129, 0.1); 
+                    border-radius: 6px; margin-bottom: 1rem;">
+            <p style="color: #10b981; font-size: 0.85rem; margin: 0;">
+                👤 {st.session_state['user_email']}
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if st.sidebar.button("🚪 로그아웃", use_container_width=True):
+        st.session_state['logged_in'] = False
+        st.session_state['user_email'] = None
+        st.rerun()
 
 # Landing Page CSS
 st.markdown("""

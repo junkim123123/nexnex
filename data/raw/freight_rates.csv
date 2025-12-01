@@ -1,5 +1,11 @@
-origin,destination,carrier,rate_per_kg,volume_discount_threshold_kg,volume_discount_percent
-Shanghai,Los Angeles,Maersk,2.50,1000,5
-Shanghai,New York,CMA CGM,3.10,1200,7
-Ningbo,Los Angeles,COSCO,2.40,1000,5
-Shenzhen,South Korea,Evergreen,1.80,800,4
+origin,destination,mode,rate_per_kg,rate_per_cbm,rate_per_container,transit_days
+South Korea,United States,Ocean,LCL,120.0,,25
+South Korea,United States,Ocean,FCL,,1800.0,25
+South Korea,United States,Air,5.5,,,5
+South Korea,Germany,Ocean,LCL,110.0,,35
+South Korea,Germany,Air,6.0,,,3
+South Korea,Japan,Ocean,LCL,80.0,,7
+South Korea,Japan,Air,3.0,,,2
+China,United States,Ocean,LCL,95.0,,30
+China,United States,Ocean,FCL,,1600.0,30
+China,United States,Air,4.5,,,4

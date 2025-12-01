@@ -75,6 +75,9 @@ pages/Results.py
 - `get_reference_transactions(spec: ShipmentSpec, limit: int) -> List[ReferenceTransaction]`
   - 유사 거래 참조 데이터 조회
 
+- `get_product_pricing_hint(spec: ShipmentSpec) -> Optional[ProductPricingHint]`
+  - 상품 가격/마진/세금 힌트 조회
+
 **현재 구현**: CSV 기반 (나중에 Supabase로 쉽게 교체 가능)
 
 **데이터 소스 우선순위**:
@@ -192,6 +195,9 @@ pages/Results.py
   
 - `data/reference_transactions.csv`: 유사 거래 데이터
   - 컬럼: `product_category`, `origin`, `destination`, `fob_price_per_unit`, `landed_cost_per_unit`, `volume`, `transaction_date`
+
+- `data/product_pricing.csv`: 상품 가격/마진/세금 데이터
+  - 컬럼: `product_category`, `origin_country`, `destination_market`, `typical_fob_low_usd`, `typical_fob_high_usd`, `typical_wholesale_price_low_usd`, `typical_wholesale_price_high_usd`, `typical_retail_price_low_usd`, `typical_retail_price_high_usd`, `vat_or_sales_tax_percent`, `typical_moq_units`, `packaging_type`, `margin_hint`, `last_updated`
 
 **CSV 파일이 없으면**: 자동으로 빈 파일 생성 (헤더만 포함)
 

@@ -1,0 +1,63 @@
+{
+    "freight_rates": {
+        "row_count": 10,
+        "distinct_combinations": 4,
+        "numeric_stats": {
+            "rate_per_kg": {
+                "count": 10,
+                "unique": 6,
+                "top": "LCL",
+                "freq": 4
+            }
+        },
+        "coverage_score": 1
+    },
+    "duty_rates": {
+        "row_count": 14,
+        "distinct_hs_codes": 6,
+        "numeric_stats": {
+            "duty_rate_percent": {
+                "count": 14.0,
+                "mean": 3.8928571428571423,
+                "std": 3.878434316480395,
+                "min": 0.0,
+                "25%": 0.0,
+                "50%": 4.6,
+                "75%": 6.2,
+                "max": 10.0
+            }
+        },
+        "coverage_score": 2
+    },
+    "extra_costs": {
+        "row_count": 7,
+        "numeric_stats": {
+            "terminal_handling": {
+                "count": 7.0,
+                "mean": 0.11142857142857143,
+                "std": 0.018644544714716084,
+                "min": 0.1,
+                "25%": 0.1,
+                "50%": 0.1,
+                "75%": 0.11499999999999999,
+                "max": 0.15
+            },
+            "customs_clearance": {
+                "count": 7.0,
+                "mean": 0.06999999999999999,
+                "std": 0.020816659994661327,
+                "min": 0.05,
+                "25%": 0.05,
+                "50%": 0.07,
+                "75%": 0.08499999999999999,
+                "max": 0.1
+            }
+        },
+        "coverage_score": 3
+    },
+    "reference_transactions": {
+        "row_count": 10,
+        "numeric_stats": {},
+        "coverage_score": 0
+    }
+}

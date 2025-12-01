@@ -109,7 +109,7 @@ class ProfitabilityMetrics(BaseModel):
 
 class ShipmentSpec(BaseModel):
     """
-    자연어 입력에서 추출한 shipment 스펙 (Phase 1: GIGO 문제 해결)
+    자연어 입력에서 추출한 shipment 스펙 (Phase 5: 제품 카테고리 및 통화 지원)
     
     이 모델은 자연어 파싱 결과를 정확하게 구조화하여
     단가 오류, 유닛 혼동 등의 문제를 방지합니다.
@@ -119,7 +119,9 @@ class ShipmentSpec(BaseModel):
     unit_type: str = Field(..., description="단위 타입 (bag, box, carton, unit, etc.)")
     origin_country: str = Field(..., description="출발 국가")
     destination_country: str = Field(..., description="도착 국가")
-    target_retail_price: Optional[float] = Field(None, gt=0, description="목표 소매 가격 (USD)")
+    target_retail_price: Optional[float] = Field(None, gt=0, description="목표 소매 가격 (USD, 변환 후)")
+    target_retail_currency: str = Field(default="USD", description="소매 가격 통화 (USD, KRW, EUR, JPY)")
+    product_category: Optional[str] = Field(None, description="제품 카테고리 (korean_snack, korean_ramen, korean_confectionery 등)")
     channel: Optional[str] = Field(None, description="판매 채널 (Convenience, FBA, DTC, etc.)")
     packaging: Optional[Dict[str, Any]] = Field(None, description="패키징 정보 (예: units_per_carton, cartons_per_pallet)")
     fob_price_per_unit: Optional[float] = Field(None, gt=0, description="추정 FOB 단가 (USD per unit)")

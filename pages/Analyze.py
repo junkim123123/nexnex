@@ -5,6 +5,7 @@ NexSupply AI - Analysis Page (v2.0)
 - Layout is structured with st.container and the 'glass-container' class.
 """
 import streamlit as st
+import re
 from utils.theme import GLOBAL_THEME_CSS
 from config.locales import DEFAULT_LANG
 from dotenv import load_dotenv
@@ -22,6 +23,35 @@ st.set_page_config(
 # --- 2. APPLY GLOBAL THEME ---
 st.markdown(GLOBAL_THEME_CSS, unsafe_allow_html=True)
 
+# Mobile responsive improvements (Sarah feedback)
+st.markdown("""
+    <style>
+        @media (max-width: 768px) {
+            /* Stack input sections on mobile */
+            .main-container {
+                padding: 0.5rem !important;
+            }
+            
+            /* Make textarea full width on mobile */
+            textarea {
+                width: 100% !important;
+            }
+            
+            /* Adjust button sizes */
+            .stButton > button {
+                width: 100% !important;
+                margin-bottom: 0.5rem;
+            }
+            
+            /* Stack template buttons */
+            .template-button {
+                width: 100% !important;
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- 3. SESSION STATE INITIALIZATION ---
 if 'language' not in st.session_state:
     st.session_state.language = DEFAULT_LANG
@@ -34,30 +64,51 @@ if 'shipment_input' in st.session_state:
 
 # --- 4. PAGE HEADER ---
 st.markdown("""
-    <div style="text-align: center; max-width: 800px; margin: 0 auto;">
-        <h1 style="font-size: 2.5rem;">What do you want to ship?</h1>
-        <p style="font-size: 1.1rem; color: #94a3b8; margin-top: 0.5rem;">
-            Describe your product and shipment in one or two sentences. We'll calculate landed cost, risk level, and basic profitability.
-        </p>
-        <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 1rem; border-radius: 8px; margin-top: 1rem; margin-bottom: 1rem; text-align: left;">
-            <p style="font-size: 0.95rem; color: #fca5a5; margin: 0; line-height: 1.6;">
-                <strong style="color: #ffffff;">💡 Don't open Excel.</strong> 
-                Just type the product name and get landed cost instantly. 
-                <span style="color: #94a3b8;">3 years of sourcing knowledge compressed into one analysis report.</span>
-            </p>
-        </div>
-        <p style="font-size: 0.875rem; color: #64748b; margin-top: 0.5rem; font-style: italic;">
-            <strong style="color: #f59e0b;">While you're still guessing, your competitors already know their exact margins.</strong>
-            <br>Same product, same factory. Some buyers save $1 per unit on freight and duties.
+    <div style="text-align: center; max-width: 900px; margin: 0 auto;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">📦 Import Cost Calculator</h1>
+        <p style="font-size: 1.1rem; color: #94a3b8; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+            Calculate landed cost, profit margin, and risk for your import shipment in seconds.
         </p>
     </div>
-    <hr>
 """, unsafe_allow_html=True)
 
-# Beginner mode hint
-if 'first_visit' not in st.session_state:
-    st.info("💡 **New to importing?** Just describe your product and where you ship from/to. We'll handle the rest.", icon="ℹ️")
+# Clear instructions box with "Try it now" CTA (YC Feedback #1)
+col_instructions, col_button = st.columns([3, 1])
+with col_instructions:
+    st.markdown("""
+        <div style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="color: #60a5fa; font-size: 1.1rem; margin-top: 0; margin-bottom: 1rem;">📋 What this screen does</h3>
+            <p style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem;">
+                Simply describe your product and shipment details. We'll analyze:
+            </p>
+            <ul style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.8; margin-left: 1.5rem; margin-bottom: 1rem;">
+                <li><strong>Landed cost per unit</strong> (manufacturing + shipping + duty + fees)</li>
+                <li><strong>Profit margin</strong> based on your target retail price</li>
+                <li><strong>Risk assessment</strong> (price volatility, lead time, compliance, reputation)</li>
+                <li><strong>Success probability</strong> for this import deal</li>
+            </ul>
+            <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 1rem; border-radius: 6px; margin-top: 1rem;">
+                <p style="color: #6ee7b7; font-size: 0.9rem; margin: 0; font-weight: 600; margin-bottom: 0.5rem;">💡 Example input:</p>
+                <p style="color: #d1fae5; font-size: 0.95rem; margin: 0; font-family: 'Courier New', monospace; background: rgba(0, 0, 0, 0.2); padding: 0.75rem; border-radius: 4px;">
+                    "새우깡 5,000봉지 미국에 4달러에 팔거야"
+                </p>
+                <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
+                    Or in English: "I want to import 5,000 bags of shrimp chips from Korea and sell at $4 in the US"
+                </p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+with col_button:
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("⚡ Try Example", use_container_width=True, type="primary", help="Load example input to see how it works"):
+        st.session_state.user_input = "새우깡 5,000봉지 미국에 4달러에 팔거야"
+        st.rerun()
+
+# First-time user: Auto-fill example if empty (YC Feedback #1)
+if 'first_visit' not in st.session_state and not st.session_state.get('user_input', '').strip():
+    st.session_state.user_input = "새우깡 5,000봉지 미국에 4달러에 팔거야"
     st.session_state.first_visit = True
+    st.info("💡 **First time?** We've filled in an example for you. Click 'Analyze Shipment' to see how it works!", icon="ℹ️")
 
 
 # --- 5. MAIN LAYOUT (Two-row structure) ---
@@ -66,37 +117,42 @@ with main_container:
     # Row 1: Big textarea + description + example
     st.markdown('<div class="glass-container">', unsafe_allow_html=True)
     
-    # Kevin-friendly explainer (Clear guidance)
+    # Helper text for beginners
     st.markdown("""
-        <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-            <p style="font-size: 0.9rem; color: #e2e8f0; margin-bottom: 0.5rem;">
-                <strong>💡 Just these four things:</strong>
+        <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+            <p style="font-size: 0.9rem; color: #6ee7b7; margin-bottom: 0.5rem;">
+                <strong>✨ For beginners:</strong> Just tell us what you want to import and where you'll sell it.
             </p>
-            <ul style="font-size: 0.85rem; color: #94a3b8; margin: 0; padding-left: 1.5rem; line-height: 1.8;">
-                <li>Product name (e.g., LED cat lamp)</li>
-                <li>Origin country (e.g., China)</li>
-                <li>Destination country (e.g., USA)</li>
-                <li>Approximate quantity (e.g., 1,000 units)</li>
-            </ul>
-            <p style="font-size: 0.85rem; color: #64748b; margin-top: 0.75rem; margin-bottom: 0; font-style: italic;">
-                <strong>Example:</strong> "LED cat lamp from China to USA, 1,000 units, selling on Amazon FBA with $24.99 retail price."
+            <p style="font-size: 0.85rem; color: #94a3b8; margin: 0; line-height: 1.6;">
+                <strong>Example:</strong> "I want to import X from Korea and sell at Y price in the US"<br>
+                We'll automatically detect the product, origin, destination, quantity, and price from your description.
             </p>
         </div>
     """, unsafe_allow_html=True)
     
-    # Main text area for user input
-    st.markdown('<label style="font-size: 1rem; font-weight: 600; color: #e2e8f0; margin-bottom: 0.5rem; display: block;">Shipment description</label>', unsafe_allow_html=True)
+    # Main text area for user input with improved UX
+    st.markdown("""
+        <div style="margin-bottom: 0.75rem;">
+            <label style="font-size: 1.1rem; font-weight: 600; color: #e2e8f0; margin-bottom: 0.5rem; display: block;">
+                📝 Describe your shipment
+            </label>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin: 0; line-height: 1.5;">
+                Tip: Include product name, quantity, origin, destination, and target price
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
     user_input = st.text_area(
         label="Shipment description",
         value=st.session_state.user_input,
-        placeholder="LED cat lamp from China to USA, 1,000 units, selling on Amazon FBA with $24.99 retail price.",
-        height=120,
+        placeholder="새우깡 5,000봉지 미국에 4달러에 팔거야\n\nOr in English:\nI want to import 5,000 bags of shrimp chips from Korea and sell at $4 in the US",
+        height=140,
         label_visibility="collapsed",
-        key="main_input"
+        key="main_input",
+        help="Describe your product, quantity, origin country, destination country, and target retail price. You can write in Korean or English."
     )
     st.session_state.user_input = user_input
     
-    # Real-time validation feedback (Kevin's request)
+    # Real-time validation feedback
     if not user_input or len(user_input.strip()) < 10:
         st.markdown("""
             <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem; margin-bottom: 1rem;">
@@ -106,134 +162,200 @@ with main_container:
             </div>
         """, unsafe_allow_html=True)
     else:
-        # Check if key information is present
-        has_product = any(word in user_input.lower() for word in ['product', 'item', 'unit', 'lamp', 'candy', 'mat', 'case', 'toy'])
-        has_origin = any(word in user_input.lower() for word in ['china', 'india', 'vietnam', 'korea', 'from'])
-        has_destination = any(word in user_input.lower() for word in ['usa', 'us', 'america', 'to'])
-        has_channel = any(word in user_input.lower() for word in ['fba', 'amazon', 'shopify', 'dtc', 'wholesale'])
+        # Improved validation with better error messages
+        user_lower = user_input.lower()
+        
+        # Check for product indicators
+        has_product = any(word in user_lower for word in [
+            'product', 'item', 'unit', 'bag', 'box', 'carton', 'piece',
+            '새우깡', '라면', '초코파이', '과자', '제품'
+        ])
+        
+        # Check for origin (more flexible)
+        has_origin = any(word in user_lower for word in [
+            'china', 'korea', 'south korea', 'india', 'vietnam', 'japan',
+            'from', '출발', '한국', '중국', '일본'
+        ])
+        
+        # Check for destination (more flexible)
+        has_destination = any(word in user_lower for word in [
+            'usa', 'us', 'united states', 'america', '미국',
+            'to', '도착', '목적지'
+        ])
+        
+        # Check for price/quantity
+        has_price = any(word in user_lower for word in [
+            '$', '달러', 'dollar', 'price', '가격', '유로', 'euro', '€', '엔', 'yen', '¥'
+        ]) or bool(re.search(r'\d+\.?\d*\s*(달러|dollar|유로|euro|엔|yen)', user_lower))
+        
+        has_quantity = bool(re.search(r'\d{1,3}(?:,\d{3})*(?:\s*(?:units?|봉지|박스|개))', user_lower)) or \
+                      bool(re.search(r'\d{3,}', user_lower))  # Large numbers likely quantities
         
         missing_items = []
+        suggestions = []
+        
         if not has_product:
-            missing_items.append("제품 이름")
+            missing_items.append("product name")
+            suggestions.append("Include the product name (e.g., 'shrimp chips', 'ramen', '새우깡')")
         if not has_origin:
-            missing_items.append("출발 국가")
+            missing_items.append("origin country")
+            suggestions.append("Mention where you're importing from (e.g., 'from Korea', 'from China', '한국에서')")
         if not has_destination:
-            missing_items.append("도착 국가")
-        if not has_channel:
-            missing_items.append("판매 채널")
+            missing_items.append("destination country")
+            suggestions.append("Mention where you're selling (e.g., 'to USA', 'in the US', '미국에')")
+        if not has_price:
+            missing_items.append("target price")
+            suggestions.append("Include your target retail price (e.g., '$4', '4달러', '4 dollars')")
+        if not has_quantity:
+            missing_items.append("quantity")
+            suggestions.append("Include the quantity (e.g., '5,000 units', '5,000봉지')")
         
         if missing_items:
             st.markdown(f"""
-                <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem; margin-bottom: 1rem;">
-                    <p style="font-size: 0.875rem; color: #f59e0b; margin: 0;">
-                        💡 <strong>추가 정보:</strong> {', '.join(missing_items)}을(를) 포함하면 더 정확한 분석이 가능합니다.
+                <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 6px; margin-top: 0.5rem; margin-bottom: 1rem;">
+                    <p style="font-size: 0.9rem; color: #f59e0b; margin: 0; margin-bottom: 0.5rem;">
+                        💡 <strong>Missing information:</strong> {', '.join(missing_items)}
                     </p>
+                    <ul style="font-size: 0.85rem; color: #fbbf24; margin: 0; padding-left: 1.5rem; line-height: 1.6;">
+                        {''.join([f'<li>{s}</li>' for s in suggestions])}
+                    </ul>
                 </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown("""
                 <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem; margin-bottom: 1rem;">
                     <p style="font-size: 0.875rem; color: #10b981; margin: 0;">
-                        ✅ <strong>좋습니다!</strong> 필수 정보가 모두 포함되어 있습니다. 분석 버튼을 눌러주세요.
+                        ✅ <strong>Great!</strong> All essential information is included. Click the analyze button below.
                     </p>
                 </div>
             """, unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True) # Close glass-container
     
-    # Row 2: Quick templates (chips) for common scenarios
+    # Row 2: Quick templates with improved UX
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<h6 style='color: #94a3b8; font-size: 0.875rem; margin-bottom: 0.75rem;'>Quick templates:</h6>", unsafe_allow_html=True)
+    st.markdown("""
+        <div style="margin-bottom: 1rem;">
+            <h6 style='color: #94a3b8; font-size: 0.875rem; margin-bottom: 0.5rem;'>💡 Quick templates:</h6>
+            <p style='color: #64748b; font-size: 0.8rem; margin: 0;'>Click a template to fill the form automatically</p>
+        </div>
+    """, unsafe_allow_html=True)
     template_cols = st.columns(3)
     
-    # FBA preset (highest priority)
+    # Templates with better labels
     templates = [
-        ("Amazon FBA (US)", "Two pallets of gummy candies from China to USA, selling on Amazon FBA with $5 retail price. Target volume: 5,000 units."),
-        ("DTC Shopify", "1,000 yoga mats from India to USA, selling on Shopify with $30 retail price. Direct-to-consumer shipping."),
-        ("Wholesale B2B", "500 phone cases from China by air freight to the US, selling at $25 wholesale price to retailers.")
+        ("📦 Amazon FBA", "Two pallets of gummy candies from China to USA, selling on Amazon FBA with $5 retail price. Target volume: 5,000 units."),
+        ("🛒 DTC Shopify", "1,000 yoga mats from India to USA, selling on Shopify with $30 retail price. Direct-to-consumer shipping."),
+        ("🏢 Wholesale B2B", "500 phone cases from China by air freight to the US, selling at $25 wholesale price to retailers.")
     ]
     
     for i, (label, text) in enumerate(templates):
-        if template_cols[i].button(label, key=f"template_{i}", use_container_width=True, type="secondary" if i == 0 else "secondary"):
+        if template_cols[i].button(label, key=f"template_{i}", use_container_width=True, type="secondary"):
             st.session_state.user_input = text
             st.rerun()
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # --- 6. ADVANCED OPTIONS & CTA ---
-bottom_cols = st.columns([0.7, 0.3])
+st.markdown("<br>", unsafe_allow_html=True)
 
-# DTC-specific options (Mia's request)
-st.markdown("---")
-st.markdown("### 🎯 DTC Campaign Settings (Optional)")
-st.markdown("""
-    <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem;">
-        <p style="font-size: 0.875rem; color: #60a5fa; margin: 0;">
-            💡 <strong>For DTC brands:</strong> Add influencer discounts and ad spend to see your real margin after marketing costs.
-        </p>
-    </div>
-""", unsafe_allow_html=True)
-
-dtc_col1, dtc_col2 = st.columns(2)
-
-with dtc_col1:
-    influencer_discount = st.slider(
-        "Average influencer discount (%)",
-        min_value=0,
-        max_value=50,
-        value=15,
-        step=5,
-        help="Typical discount code percentage (e.g., 15% off for influencer codes)"
-    )
-
-with dtc_col2:
-    ad_spend_ratio = st.slider(
-        "Ad spend as % of revenue",
-        min_value=0,
-        max_value=50,
-        value=25,
-        step=5,
-        help="Total marketing spend (ads, influencers, content) as percentage of revenue"
-    )
-
-# Store in session state for use in Results
-st.session_state.influencer_discount = influencer_discount
-st.session_state.ad_spend_ratio = ad_spend_ratio
-
-with bottom_cols[0]:
-    with st.expander("⚙️ Advanced options (optional)", expanded=False):
-        st.markdown("""
-            <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem;">
-                <p style="font-size: 0.875rem; color: #60a5fa; margin: 0;">
-                    💡 <strong>Don't know? You can skip this!</strong> These options are optional. The basic analysis is sufficient with just the description above.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        costing_goal = st.text_input("Costing goal", placeholder="e.g., Target $2.50 per unit", key="costing_goal")
-        
-        freight_mode = st.selectbox("Freight mode", ["Not sure", "Ocean", "Air"], key="freight_mode")
-        
-        hts_code = st.text_input("HS/HTS code (if known)", placeholder="e.g., 3926.10.00", key="hts_code")
-        
-        unit_weight = st.number_input("Unit weight (kg)", min_value=0.0, step=0.1, value=None, key="unit_weight")
-        if unit_weight is not None and unit_weight <= 0:
-            st.markdown('<p style="color: #ef4444; font-size: 0.75rem; margin-top: -1rem;">Unit weight must be a positive number.</p>', unsafe_allow_html=True)
-
-with bottom_cols[1]:
-    # Analyze Button - Always visible
-    is_loading = st.session_state.get('is_analyzing', False)
-    user_input_clean = (st.session_state.get('user_input', '') or '').strip()
-    min_chars = 10
-    button_disabled = len(user_input_clean) < min_chars or is_loading
+# Advanced options in expander
+with st.expander("⚙️ Advanced Options (Optional)", expanded=False):
+    st.markdown("""
+        <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem;">
+            <p style="font-size: 0.875rem; color: #60a5fa; margin: 0;">
+                💡 <strong>Don't know? You can skip this!</strong> These options are optional. The basic analysis works great with just the description above.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
     
+    adv_col1, adv_col2 = st.columns(2)
+    
+    with adv_col1:
+        freight_mode = st.selectbox(
+            "Freight mode",
+            ["Auto-detect", "Ocean", "Air"],
+            key="freight_mode",
+            help="Shipping method. Auto-detect will choose based on product and route."
+        )
+        
+        hts_code = st.text_input(
+            "HS/HTS code (if known)",
+            placeholder="e.g., 1905.90",
+            key="hts_code",
+            help="Harmonized System code for customs classification. Leave blank if unknown."
+        )
+    
+    with adv_col2:
+        unit_weight = st.number_input(
+            "Unit weight (kg)",
+            min_value=0.0,
+            step=0.1,
+            value=None,
+            key="unit_weight",
+            help="Weight per unit in kilograms. Leave blank for auto-estimation."
+        )
+        if unit_weight is not None and unit_weight <= 0:
+            st.error("Unit weight must be a positive number.")
+        
+        incoterm = st.selectbox(
+            "Incoterm",
+            ["FOB (Free On Board)", "CIF (Cost, Insurance, Freight)", "EXW (Ex Works)", "DDP (Delivered Duty Paid)"],
+            key="incoterm",
+            help="Shipping terms. FOB is most common for imports."
+        )
+    
+    # DTC-specific options (only show if DTC-related keywords detected)
+    user_lower = (st.session_state.get('user_input', '') or '').lower()
+    if any(word in user_lower for word in ['dtc', 'shopify', 'direct', 'consumer']):
+        st.markdown("---")
+        st.markdown("#### 🎯 DTC Campaign Settings")
+        dtc_col1, dtc_col2 = st.columns(2)
+        
+        with dtc_col1:
+            influencer_discount = st.slider(
+                "Average influencer discount (%)",
+                min_value=0,
+                max_value=50,
+                value=15,
+                step=5,
+                help="Typical discount code percentage (e.g., 15% off for influencer codes)"
+            )
+        
+        with dtc_col2:
+            ad_spend_ratio = st.slider(
+                "Ad spend as % of revenue",
+                min_value=0,
+                max_value=50,
+                value=25,
+                step=5,
+                help="Total marketing spend (ads, influencers, content) as percentage of revenue"
+            )
+        
+        st.session_state.influencer_discount = influencer_discount
+        st.session_state.ad_spend_ratio = ad_spend_ratio
+
+# Analyze Button - Prominent CTA
+st.markdown("<br>", unsafe_allow_html=True)
+is_loading = st.session_state.get('is_analyzing', False)
+user_input_clean = (st.session_state.get('user_input', '') or '').strip()
+min_chars = 10
+button_disabled = len(user_input_clean) < min_chars or is_loading
+
+# Analyze Button with better visual feedback
+button_col1, button_col2, button_col3 = st.columns([1, 2, 1])
+with button_col2:
     analyze_button = st.button(
-        "Get Cost & Risk Estimate",
+        "🚀 Analyze Shipment",
         key="analyze_btn",
         type="primary",
         use_container_width=True,
         disabled=button_disabled,
+        help="Click to calculate landed cost, profit margin, and risk assessment"
     )
+    
+    if button_disabled and len(user_input_clean) < min_chars:
+        st.caption("💡 Enter at least 10 characters to start analysis", help="Please provide more details about your shipment")
 
 
 # --- 7. FORM SUBMISSION LOGIC ---

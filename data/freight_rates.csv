@@ -1,0 +1,7 @@
+origin,destination,mode,rate_per_kg,rate_per_cbm,rate_per_container,transit_days
+South Korea,United States,Ocean,5.0,120.0,,25
+South Korea,Germany,Ocean,6.0,150.0,,35
+China,United States,Ocean,4.5,110.0,,30
+China,United States,Ocean,4.5,110.0,,30
+China,United States,Ocean,4.5,110.0,,30
+China,United States,Ocean,4.5,110.0,,30

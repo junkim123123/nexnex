@@ -1,29 +1,64 @@
 # NexSupply AI - Python Dependencies
 # Last updated: 2025-01-XX
+# 
+# Installation:
+#   pip install -r requirements.txt
+#
+# For development (with testing tools):
+#   pip install -r requirements.txt -r requirements-dev.txt
 
+# ============================================================================
 # Core Framework
-streamlit>=1.28.0
+# ============================================================================
+streamlit>=1.28.0,<2.0.0
 
+# ============================================================================
 # Data Processing
-pandas>=2.0.0
-numpy>=1.24.0
+# ============================================================================
+pandas>=2.0.0,<3.0.0
+numpy>=1.24.0,<2.0.0
 
+# ============================================================================
 # Visualization
-plotly>=5.17.0
+# ============================================================================
+plotly>=5.17.0,<6.0.0
 
+# ============================================================================
 # AI/ML
-google-generativeai>=0.3.0
+# ============================================================================
+google-generativeai>=0.3.0,<1.0.0
 
-# Environment & Config
-python-dotenv>=1.0.0
+# ============================================================================
+# Environment & Configuration
+# ============================================================================
+python-dotenv>=1.0.0,<2.0.0
 
+# ============================================================================
 # Utilities
-python-dateutil>=2.8.2
+# ============================================================================
+python-dateutil>=2.8.2,<3.0.0
 
-# Optional: PDF Generation (if needed)
-# fpdf2>=2.7.0
+# ============================================================================
+# Database (Optional - for PostgreSQL/Supabase integration)
+# ============================================================================
+# PostgreSQL driver (required for analysis_logs table)
+psycopg2-binary>=2.9.0,<3.0.0
 
-# Development (optional)
+# Uncomment when using Supabase:
+# supabase>=2.0.0,<3.0.0
+# postgrest>=0.13.0,<1.0.0
+
+# ============================================================================
+# Type Hints & Validation (Optional - for better code quality)
+# ============================================================================
+# pydantic>=2.0.0,<3.0.0  # Already used in core/models.py
+# typing-extensions>=4.8.0  # For Python < 3.11
+
+# ============================================================================
+# Development Dependencies (Optional)
+# ============================================================================
+# Install separately: pip install pytest black ruff mypy
 # pytest>=7.4.0
 # black>=23.0.0
 # ruff>=0.1.0
+# mypy>=1.5.0

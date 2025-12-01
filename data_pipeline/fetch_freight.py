@@ -18,9 +18,10 @@ def process_freight_data():
         df = pd.read_csv(config.FREIGHT_RATES_FILE)
 
         # Basic data normalization (this can be expanded later)
-        df['rate_per_kg'] = df['rate_per_kg'].astype(float)
-        df['volume_discount_threshold_kg'] = df['volume_discount_threshold_kg'].astype(int)
-        df['volume_discount_percent'] = df['volume_discount_percent'].astype(int)
+        df['rate_per_kg'] = pd.to_numeric(df['rate_per_kg'], errors='coerce')
+        df['rate_per_cbm'] = pd.to_numeric(df['rate_per_cbm'], errors='coerce')
+        df['rate_per_container'] = pd.to_numeric(df['rate_per_container'], errors='coerce')
+        df['transit_days'] = pd.to_numeric(df['transit_days'], errors='coerce')
 
         # Save the processed data to a new CSV file
         df.to_csv(config.PROCESSED_FREIGHT_RATES_FILE, index=False)

@@ -4,7 +4,7 @@ from . import fetch_freight, fetch_duties, fetch_reference_transactions
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def main():
+def fetch_all_data():
     """
     Main function to run all data processing scripts.
     """
@@ -22,4 +22,4 @@ def main():
     logging.info("Data pipeline processing complete.")
 
 if __name__ == '__main__':
-    main()
+    fetch_all_data()

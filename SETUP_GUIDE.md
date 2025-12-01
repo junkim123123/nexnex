@@ -10,6 +10,7 @@
 2. Google 계정으로 로그인
 3. "Create API Key" 버튼 클릭
 4. 생성된 API 키를 복사 (보통 39자 정도의 `AIzaSy...` 형식)
+   **⚠️ 중요**: 절대 이 키를 코드나 문서에 직접 작성하지 마세요!
 
 ### 2. .env 파일 수정하기
 
@@ -25,7 +26,7 @@ GEMINI_API_KEY=여기에_실제_API_키_입력
 
 예시:
 ```
-GEMINI_API_KEY=AIzaSyBgMc5wI9HpbgfQKcZykcYpItmDiDaR9r4
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 ```
 
 #### 방법 2: PowerShell에서 직접 생성

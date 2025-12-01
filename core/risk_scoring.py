@@ -16,10 +16,14 @@ from core.models import ShipmentSpec
 logger = logging.getLogger(__name__)
 
 
+from core.data_access import ProductPricingHint
+
+
 def compute_risk_scores(
     spec: ShipmentSpec,
     cost_scenarios: Dict[str, float],
-    data_quality: Dict[str, Any]
+    data_quality: Dict[str, Any],
+    pricing_hint: Optional[ProductPricingHint] = None
 ) -> Dict[str, Any]:
     """
     리스크 스코어 계산
@@ -28,6 +32,7 @@ def compute_risk_scores(
         spec: ShipmentSpec 인스턴스
         cost_scenarios: 비용 시나리오 딕셔너리 (base, best, worst)
         data_quality: 데이터 품질 정보 (used_fallbacks 등)
+        pricing_hint: 상품 가격/마진/세금 힌트
         
     Returns:
         리스크 스코어 딕셔너리:
@@ -39,7 +44,7 @@ def compute_risk_scores(
         - reputation_risk (0-100)
     """
     # Sub-scores 계산
-    price_risk = _compute_price_risk(spec, cost_scenarios, data_quality)
+    price_risk = _compute_price_risk(spec, cost_scenarios, data_quality, pricing_hint)
     lead_time_risk = _compute_lead_time_risk(spec, data_quality)
     compliance_risk = _compute_compliance_risk(spec, data_quality)
     reputation_risk = _compute_reputation_risk(spec, data_quality)
@@ -76,7 +81,8 @@ def compute_risk_scores(
 def _compute_price_risk(
     spec: ShipmentSpec,
     cost_scenarios: Dict[str, float],
-    data_quality: Dict[str, Any]
+    data_quality: Dict[str, Any],
+    pricing_hint: Optional[ProductPricingHint] = None
 ) -> float:
     """
     가격 변동성 리스크 계산
@@ -123,6 +129,15 @@ def _compute_price_risk(
         elif cost_ratio > 0.6:
             risk_score += 10
     
+    # 5. 가격 힌트와 비교
+    if pricing_hint:
+        if spec.fob_price_per_unit:
+            if not (pricing_hint.typical_fob_low_usd <= spec.fob_price_per_unit <= pricing_hint.typical_fob_high_usd):
+                risk_score += 15
+        if spec.target_retail_price:
+            if not (pricing_hint.typical_retail_price_low_usd <= spec.target_retail_price <= pricing_hint.typical_retail_price_high_usd):
+                risk_score += 15
+
     return min(100.0, risk_score)
 
 
@@ -197,12 +212,37 @@ def _compute_compliance_risk(
     if 'duty' in used_fallbacks:
         risk_score += 25  # HS 코드/관세 데이터 부족
     
-    # 2. 규제 카테고리 검사
-    product_lower = spec.product_name.lower()
+    # Phase 5: 제품 카테고리 기반 규제 리스크 (기존 키워드 검사보다 우선)
+    food_categories = ['korean_snack', 'korean_ramen', 'korean_confectionery']
+    is_food_product = spec.product_category in food_categories if spec.product_category else False
     
-    # High-risk categories
-    if any(kw in product_lower for kw in ['food', 'candy', 'snack', '식품', '과자']):
-        risk_score += 30  # FDA 규제
+    # Phase 5: US/EU 도착지 + 식품 제품 = 기본 규제 리스크
+    strict_destinations = ['United States', 'USA', 'US', 'Germany', 'France', 'United Kingdom', 'UK']
+    is_strict_destination = spec.destination_country in strict_destinations
+    
+    if is_food_product and is_strict_destination:
+        # 식품 제품은 최소 25점 기본 리스크 (기존 30점과 유사하지만 카테고리 기반)
+        risk_score += 25.0
+    
+    # Phase 5: 매운맛 제품 감지 및 추가 리스크
+    product_lower = spec.product_name.lower()
+    spicy_markers = ['불닭', '매운', 'spicy', 'hot chicken', 'buldak', 'fire noodle', 'hot', 'chili']
+    is_spicy = any(marker in product_lower for marker in spicy_markers)
+    
+    if is_spicy:
+        # 매운맛 제품은 FDA 규제 가능성 추가
+        risk_score += 15.0
+        logger.info(f"Phase 5: Spicy product detected ({spec.product_name}), compliance risk increased")
+    
+    # Phase 5: 제품 카테고리 기반 추가 리스크
+    if spec.product_category == 'korean_ramen' and is_strict_destination:
+        # 라면은 식품 라벨링 규제 추가
+        risk_score += 5.0
+    
+    # 기존 키워드 검사 (카테고리 기반이 없을 때 fallback)
+    if not is_food_product:
+        if any(kw in product_lower for kw in ['food', 'candy', 'snack', '식품', '과자']):
+            risk_score += 30  # FDA 규제
     if any(kw in product_lower for kw in ['toy', 'children', 'kid', '장난감', '어린이']):
         risk_score += 30  # CPSC 규제
     if any(kw in product_lower for kw in ['electronic', 'battery', '전자제품', '배터리']):

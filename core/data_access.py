@@ -19,6 +19,142 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class ProductPricingHint:
+    """상품 가격/마진/세금 힌트"""
+    product_category: str = ""
+    origin_country: str = ""
+    destination_market: str = ""
+    typical_fob_low_usd: float = 0.0
+    typical_fob_high_usd: float = 0.0
+    typical_wholesale_price_low_usd: float = 0.0
+    typical_wholesale_price_high_usd: float = 0.0
+    typical_retail_price_low_usd: float = 0.0
+    typical_retail_price_high_usd: float = 0.0
+    vat_or_sales_tax_percent: float = 0.0
+    typical_moq_units: int = 0
+    packaging_type: str = ""
+    margin_hint: str = ""
+    source: str = "fallback"
+
+
+# ============================================================================
+# Phase 5: Country Name Normalization
+# ============================================================================
+
+def normalize_country_name(country: str) -> str:
+    """
+    국가 이름 정규화 (Phase 5: CSV 매칭 개선)
+    
+    다양한 국가 이름 변형을 표준 이름으로 변환합니다.
+    CSV/Supabase에서 일관된 매칭을 위해 사용됩니다.
+    
+    Args:
+        country: 원본 국가 이름 (다양한 형식 가능)
+        
+    Returns:
+        정규화된 국가 이름 (표준 형식)
+        
+    Examples:
+        normalize_country_name("Korea") -> "South Korea"
+        normalize_country_name("USA") -> "United States"
+        normalize_country_name("Deutschland") -> "Germany"
+    """
+    if not country:
+        return country
+    
+    country_lower = country.strip().lower()
+    
+    # 국가 이름 매핑 테이블
+    country_mapping = {
+        # South Korea variants
+        "korea": "South Korea",
+        "south korea": "South Korea",
+        "republic of korea": "South Korea",
+        "rok": "South Korea",
+        "kr": "South Korea",
+        "한국": "South Korea",
+        "대한민국": "South Korea",
+        
+        # United States variants
+        "usa": "United States",
+        "us": "United States",
+        "united states": "United States",
+        "united states of america": "United States",
+        "america": "United States",
+        "미국": "United States",
+        
+        # Germany variants
+        "germany": "Germany",
+        "deutschland": "Germany",
+        "de": "Germany",
+        "독일": "Germany",
+        
+        # Japan variants
+        "japan": "Japan",
+        "jp": "Japan",
+        "日本": "Japan",
+        "일본": "Japan",
+        
+        # China variants
+        "china": "China",
+        "prc": "China",
+        "people's republic of china": "China",
+        "중국": "China",
+        
+        # United Kingdom variants
+        "united kingdom": "United Kingdom",
+        "uk": "United Kingdom",
+        "great britain": "United Kingdom",
+        "britain": "United Kingdom",
+        "england": "United Kingdom",
+        "영국": "United Kingdom",
+        
+        # France variants
+        "france": "France",
+        "fr": "France",
+        "프랑스": "France",
+        
+        # Italy variants
+        "italy": "Italy",
+        "it": "Italy",
+        "이탈리아": "Italy",
+        
+        # Spain variants
+        "spain": "Spain",
+        "es": "Spain",
+        "스페인": "Spain",
+        
+        # Netherlands variants
+        "netherlands": "Netherlands",
+        "holland": "Netherlands",
+        "nl": "Netherlands",
+        "네덜란드": "Netherlands",
+        
+        # Vietnam variants
+        "vietnam": "Vietnam",
+        "vn": "Vietnam",
+        "베트남": "Vietnam",
+        
+        # India variants
+        "india": "India",
+        "in": "India",
+        "인도": "India",
+    }
+    
+    # 정확한 매칭 시도
+    if country_lower in country_mapping:
+        return country_mapping[country_lower]
+    
+    # 부분 매칭 시도 (예: "South Korea"가 이미 정규화된 경우)
+    for variant, canonical in country_mapping.items():
+        if variant in country_lower or country_lower in variant:
+            return canonical
+    
+    # 매칭 실패 시 원본 반환 (대소문자만 정규화)
+    return country.strip().title()
+
+
+@dataclass
 class FreightRate:
     """운임 정보"""
     rate_per_kg: Optional[float] = None
@@ -75,6 +211,7 @@ class DataAccessLayer:
         self.duty_csv = self.data_dir / "duty_rates.csv"
         self.extra_costs_csv = self.data_dir / "extra_costs.csv"
         self.transactions_csv = self.data_dir / "reference_transactions.csv"
+        self.product_pricing_csv = self.data_dir / "product_pricing.csv"
         
         # CSV 파일이 없으면 생성 (빈 파일)
         self._initialize_csv_files()
@@ -100,10 +237,69 @@ class DataAccessLayer:
             with open(self.transactions_csv, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(['product_category', 'origin', 'destination', 'fob_price_per_unit', 'landed_cost_per_unit', 'volume', 'transaction_date'])
+        
+        if not self.product_pricing_csv.exists():
+            with open(self.product_pricing_csv, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    "product_category", "origin_country", "destination_market",
+                    "typical_fob_low_usd", "typical_fob_high_usd",
+                    "typical_wholesale_price_low_usd", "typical_wholesale_price_high_usd",
+                    "typical_retail_price_low_usd", "typical_retail_price_high_usd",
+                    "vat_or_sales_tax_percent", "typical_moq_units",
+                    "packaging_type", "margin_hint", "last_updated"
+                ])
     
+    def get_product_pricing_hint(self, spec: ShipmentSpec) -> Optional[ProductPricingHint]:
+        """
+        상품 가격/마진/세금 힌트 조회
+        """
+        if not self.product_pricing_csv.exists():
+            return None
+
+        normalized_origin = normalize_country_name(spec.origin_country)
+        normalized_destination = normalize_country_name(spec.destination_country)
+        
+        try:
+            with open(self.product_pricing_csv, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    csv_origin = normalize_country_name(row.get('origin_country', ''))
+                    csv_destination = normalize_country_name(row.get('destination_market', ''))
+                    
+                    if (spec.product_category and spec.product_category in row.get('product_category', '') and
+                        csv_origin.lower() == normalized_origin.lower() and
+                        csv_destination.lower() == normalized_destination.lower()):
+                        
+                        return ProductPricingHint(
+                            product_category=row.get('product_category'),
+                            origin_country=row.get('origin_country'),
+                            destination_market=row.get('destination_market'),
+                            typical_fob_low_usd=float(row.get('typical_fob_low_usd', 0)),
+                            typical_fob_high_usd=float(row.get('typical_fob_high_usd', 0)),
+                            typical_wholesale_price_low_usd=float(row.get('typical_wholesale_price_low_usd', 0)),
+                            typical_wholesale_price_high_usd=float(row.get('typical_wholesale_price_high_usd', 0)),
+                            typical_retail_price_low_usd=float(row.get('typical_retail_price_low_usd', 0)),
+                            typical_retail_price_high_usd=float(row.get('typical_retail_price_high_usd', 0)),
+                            vat_or_sales_tax_percent=float(row.get('vat_or_sales_tax_percent', 0)),
+                            typical_moq_units=int(row.get('typical_moq_units', 0)),
+                            packaging_type=row.get('packaging_type'),
+                            margin_hint=row.get('margin_hint'),
+                            source="csv"
+                        )
+        except Exception as e:
+            logger.warning(f"CSV에서 가격 힌트 조회 실패: {e}")
+        
+        return None
+
     def get_freight_rate(self, spec: ShipmentSpec) -> FreightRate:
         """
-        운임 정보 조회
+        운임 정보 조회 (Phase 5: 국가 이름 정규화 적용)
+        
+        매칭 전략:
+        1. 정규화된 origin + destination 정확 매칭 (우선)
+        2. 정규화된 origin만 매칭 (fallback)
+        3. 모두 실패 시 fallback 값 반환
         
         Args:
             spec: ShipmentSpec 인스턴스
@@ -111,14 +307,23 @@ class DataAccessLayer:
         Returns:
             FreightRate 인스턴스 (데이터 없으면 fallback 값)
         """
+        # Phase 5: 국가 이름 정규화
+        normalized_origin = normalize_country_name(spec.origin_country)
+        normalized_destination = normalize_country_name(spec.destination_country)
+        
         # CSV에서 조회 시도
         if self.freight_csv.exists():
             try:
                 with open(self.freight_csv, 'r', encoding='utf-8') as f:
                     reader = csv.DictReader(f)
                     for row in reader:
-                        if (row.get('origin', '').lower() == spec.origin_country.lower() and
-                            row.get('destination', '').lower() == spec.destination_country.lower()):
+                        # CSV의 국가 이름도 정규화하여 비교
+                        csv_origin = normalize_country_name(row.get('origin', ''))
+                        csv_destination = normalize_country_name(row.get('destination', ''))
+                        
+                        # 정확 매칭: origin + destination
+                        if (csv_origin.lower() == normalized_origin.lower() and
+                            csv_destination.lower() == normalized_destination.lower()):
                             
                             rate_per_kg = float(row.get('rate_per_kg', 0)) if row.get('rate_per_kg') else None
                             rate_per_cbm = float(row.get('rate_per_cbm', 0)) if row.get('rate_per_cbm') else None
@@ -161,6 +366,15 @@ class DataAccessLayer:
                 source="fallback"
             )
         
+        if 'germany' in dest_lower:
+            return FreightRate(
+                rate_per_kg=6.0,
+                rate_per_cbm=150.0,
+                transit_days=35,
+                mode="Ocean",
+                source="fallback"
+            )
+
         # 기본값
         return FreightRate(
             rate_per_kg=5.0,
@@ -186,14 +400,18 @@ class DataAccessLayer:
         if not hs_code:
             hs_code = self._estimate_hs_code(spec)
         
+        # Phase 5: 국가 이름 정규화
+        normalized_origin = normalize_country_name(spec.origin_country)
+        
         # CSV에서 조회 시도
         if self.duty_csv.exists() and hs_code:
             try:
                 with open(self.duty_csv, 'r', encoding='utf-8') as f:
                     reader = csv.DictReader(f)
                     for row in reader:
+                        csv_origin = normalize_country_name(row.get('origin_country', ''))
                         if (row.get('hs_code', '').startswith(hs_code[:6]) and
-                            row.get('origin_country', '').lower() == spec.origin_country.lower()):
+                            csv_origin.lower() == normalized_origin.lower()):
                             
                             duty_rate = float(row.get('duty_rate_percent', 0)) / 100.0
                             section_301 = float(row.get('section_301_rate_percent', 0)) / 100.0 if row.get('section_301_rate_percent') else 0.0
@@ -302,15 +520,23 @@ class DataAccessLayer:
             try:
                 with open(self.transactions_csv, 'r', encoding='utf-8') as f:
                     reader = csv.DictReader(f)
+                    # Phase 5: 국가 이름 정규화
+                    normalized_origin = normalize_country_name(spec.origin_country)
+                    normalized_destination = normalize_country_name(spec.destination_country)
+                    
                     for row in reader:
                         # 유사도 매칭 (origin, destination, product category)
-                        if (row.get('origin', '').lower() == spec.origin_country.lower() and
-                            row.get('destination', '').lower() == spec.destination_country.lower()):
+                        csv_origin = normalize_country_name(row.get('origin', ''))
+                        csv_destination = normalize_country_name(row.get('destination', ''))
+                        
+                        # 정확 매칭: origin + destination
+                        if (csv_origin.lower() == normalized_origin.lower() and
+                            csv_destination.lower() == normalized_destination.lower()):
                             
                             transactions.append(ReferenceTransaction(
                                 product_category=row.get('product_category', ''),
-                                origin=row.get('origin', ''),
-                                destination=row.get('destination', ''),
+                                origin=csv_origin,  # 정규화된 이름 사용
+                                destination=csv_destination,  # 정규화된 이름 사용
                                 fob_price_per_unit=float(row.get('fob_price_per_unit', 0) or 0),
                                 landed_cost_per_unit=float(row.get('landed_cost_per_unit', 0) or 0),
                                 volume=int(row.get('volume', 0) or 0),
@@ -320,6 +546,27 @@ class DataAccessLayer:
                             
                             if len(transactions) >= limit:
                                 break
+                    
+                    # Fallback: origin만 매칭 시도
+                    if len(transactions) == 0:
+                        f.seek(0)
+                        reader = csv.DictReader(f)
+                        for row in reader:
+                            csv_origin = normalize_country_name(row.get('origin', ''))
+                            if csv_origin.lower() == normalized_origin.lower():
+                                transactions.append(ReferenceTransaction(
+                                    product_category=row.get('product_category', ''),
+                                    origin=csv_origin,
+                                    destination=normalize_country_name(row.get('destination', '')),
+                                    fob_price_per_unit=float(row.get('fob_price_per_unit', 0) or 0),
+                                    landed_cost_per_unit=float(row.get('landed_cost_per_unit', 0) or 0),
+                                    volume=int(row.get('volume', 0) or 0),
+                                    transaction_date=row.get('transaction_date', ''),
+                                    source="csv"
+                                ))
+                                
+                                if len(transactions) >= limit:
+                                    break
             except Exception as e:
                 logger.warning(f"CSV에서 거래 데이터 조회 실패: {e}, fallback 사용")
         
@@ -338,10 +585,25 @@ _data_access = None
 
 
 def get_data_access() -> DataAccessLayer:
-    """데이터 접근 레이어 싱글톤 인스턴스 반환"""
+    """
+    데이터 접근 레이어 싱글톤 인스턴스 반환
+    
+    환경 변수 기반으로 Supabase 또는 CSV 모드 선택:
+    - SUPABASE_URL, SUPABASE_KEY가 설정되어 있으면 SupabaseDataAccessLayer 사용
+    - 설정 안 되어 있으면 CSV 기반 DataAccessLayer 사용
+    """
     global _data_access
     if _data_access is None:
-        _data_access = DataAccessLayer()
+        import os
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
+        
+        if supabase_url and supabase_key:
+            logger.info("Using SupabaseDataAccessLayer (SUPABASE_URL and SUPABASE_KEY found)")
+            _data_access = SupabaseDataAccessLayer()
+        else:
+            logger.info("Using CSV-based DataAccessLayer (SUPABASE_URL or SUPABASE_KEY not found)")
+            _data_access = DataAccessLayer()
     return _data_access
 
 
@@ -364,6 +626,11 @@ def get_extra_costs(spec: ShipmentSpec) -> ExtraCostsSummary:
 def get_reference_transactions(spec: ShipmentSpec, limit: int = 5) -> List[ReferenceTransaction]:
     """유사 거래 참조 데이터 조회"""
     return get_data_access().get_reference_transactions(spec, limit)
+
+
+def get_product_pricing_hint(spec: ShipmentSpec) -> Optional[ProductPricingHint]:
+    """상품 가격/마진/세금 힌트 조회"""
+    return get_data_access().get_product_pricing_hint(spec)
 
 
 # ============================================================================
@@ -397,14 +664,13 @@ class SupabaseDataAccessLayer(DataAccessLayer):
         self.supabase_url = os.getenv("SUPABASE_URL")
         self.supabase_key = os.getenv("SUPABASE_KEY")
         
-        # Supabase 클라이언트 초기화 (TODO: 실제 구현)
+        # Supabase 클라이언트 초기화
         self.supabase_client = None
         if self.supabase_url and self.supabase_key:
             try:
-                # TODO: Supabase 클라이언트 초기화
-                # from supabase import create_client, Client
-                # self.supabase_client: Client = create_client(self.supabase_url, self.supabase_key)
-                logger.info("Supabase credentials found, but client initialization not implemented yet")
+                from supabase import create_client, Client
+                self.supabase_client: Client = create_client(self.supabase_url, self.supabase_key)
+                logger.info("Supabase client initialized successfully")
             except ImportError:
                 logger.warning("Supabase Python client not installed. Install with: pip install supabase")
             except Exception as e:
@@ -420,27 +686,29 @@ class SupabaseDataAccessLayer(DataAccessLayer):
         예상 컬럼: origin, destination, mode, rate_per_kg, rate_per_cbm, 
                   rate_per_container, transit_days
         """
+        # Phase 5: 국가 이름 정규화
+        normalized_origin = normalize_country_name(spec.origin_country)
+        normalized_destination = normalize_country_name(spec.destination_country)
+        
         # Step 1: Supabase에서 조회 시도
         if self.supabase_client:
             try:
-                # TODO: Supabase 쿼리 구현
-                # result = self.supabase_client.table('freight_rates')\
-                #     .select('*')\
-                #     .eq('origin', spec.origin_country)\
-                #     .eq('destination', spec.destination_country)\
-                #     .execute()
-                # 
-                # if result.data and len(result.data) > 0:
-                #     row = result.data[0]
-                #     return FreightRate(
-                #         rate_per_kg=row.get('rate_per_kg'),
-                #         rate_per_cbm=row.get('rate_per_cbm'),
-                #         rate_per_container=row.get('rate_per_container'),
-                #         transit_days=row.get('transit_days', 25),
-                #         mode=row.get('mode', 'Ocean'),
-                #         source="supabase"
-                #     )
-                pass
+                result = self.supabase_client.table('freight_rates')\
+                    .select('*')\
+                    .eq('origin', normalized_origin)\
+                    .eq('destination', normalized_destination)\
+                    .execute()
+                
+                if result.data and len(result.data) > 0:
+                    row = result.data[0]
+                    return FreightRate(
+                        rate_per_kg=float(row.get('rate_per_kg')) if row.get('rate_per_kg') is not None else None,
+                        rate_per_cbm=float(row.get('rate_per_cbm')) if row.get('rate_per_cbm') is not None else None,
+                        rate_per_container=float(row.get('rate_per_container')) if row.get('rate_per_container') is not None else None,
+                        transit_days=int(row.get('transit_days', 25)),
+                        mode=row.get('mode', 'Ocean'),
+                        source="supabase"
+                    )
             except Exception as e:
                 logger.warning(f"Supabase freight_rate query failed: {e}, falling back to CSV")
         
@@ -461,20 +729,24 @@ class SupabaseDataAccessLayer(DataAccessLayer):
         # Step 1: Supabase에서 조회 시도
         if self.supabase_client and hs_code:
             try:
-                # TODO: Supabase 쿼리 구현
-                # result = self.supabase_client.table('duty_rates')\
-                #     .select('*')\
-                #     .ilike('hs_code', f"{hs_code[:6]}%")\
-                #     .eq('origin_country', spec.origin_country)\
-                #     .execute()
-                # 
-                # if result.data and len(result.data) > 0:
-                #     row = result.data[0]
-                #     duty_rate = float(row.get('duty_rate_percent', 0)) / 100.0
-                #     section_301 = float(row.get('section_301_rate_percent', 0)) / 100.0
-                #     total_rate = duty_rate + section_301
-                #     return total_rate if total_rate > 0 else None
-                pass
+                # HS 코드 prefix로 매칭 (6자리)
+                hs_prefix = hs_code[:6] if len(hs_code) >= 6 else hs_code
+                # Phase 5: 국가 이름 정규화
+                normalized_origin = normalize_country_name(spec.origin_country)
+                
+                result = self.supabase_client.table('duty_rates')\
+                    .select('*')\
+                    .like('hs_code', f"{hs_prefix}%")\
+                    .eq('origin_country', normalized_origin)\
+                    .limit(1)\
+                    .execute()
+                
+                if result.data and len(result.data) > 0:
+                    row = result.data[0]
+                    duty_rate = float(row.get('duty_rate_percent', 0)) / 100.0
+                    section_301 = float(row.get('section_301_rate_percent', 0) or 0) / 100.0
+                    total_rate = duty_rate + section_301
+                    return total_rate if total_rate > 0 else None
             except Exception as e:
                 logger.warning(f"Supabase duty_rate query failed: {e}, falling back to CSV")
         
@@ -492,27 +764,33 @@ class SupabaseDataAccessLayer(DataAccessLayer):
         # Step 1: Supabase에서 조회 시도
         if self.supabase_client:
             try:
-                # TODO: Supabase 쿼리 구현
-                # product_lower = spec.product_name.lower()
-                # 
-                # # 카테고리 매칭 (food, toy, electronic 등)
-                # result = self.supabase_client.table('extra_costs')\
-                #     .select('*')\
-                #     .or_(f"category.ilike.%{product_lower}%,category.eq.general")\
-                #     .limit(1)\
-                #     .execute()
-                # 
-                # if result.data and len(result.data) > 0:
-                #     row = result.data[0]
-                #     return ExtraCostsSummary(
-                #         terminal_handling=float(row.get('terminal_handling', 0)),
-                #         customs_clearance=float(row.get('customs_clearance', 0)),
-                #         inland_transport=float(row.get('inland_transport', 0)),
-                #         inspection_qc=float(row.get('inspection_qc', 0)),
-                #         certification=float(row.get('certification', 0)),
-                #         source="supabase"
-                #     )
-                pass
+                product_lower = spec.product_name.lower()
+                
+                # 먼저 제품 카테고리와 매칭되는 항목 찾기
+                result = self.supabase_client.table('extra_costs')\
+                    .select('*')\
+                    .ilike('category', f'%{product_lower}%')\
+                    .limit(1)\
+                    .execute()
+                
+                # 매칭 안 되면 "general" 카테고리 사용
+                if not result.data or len(result.data) == 0:
+                    result = self.supabase_client.table('extra_costs')\
+                        .select('*')\
+                        .eq('category', 'general')\
+                        .limit(1)\
+                        .execute()
+                
+                if result.data and len(result.data) > 0:
+                    row = result.data[0]
+                    return ExtraCostsSummary(
+                        terminal_handling=float(row.get('terminal_handling', 0) or 0),
+                        customs_clearance=float(row.get('customs_clearance', 0) or 0),
+                        inland_transport=float(row.get('inland_transport', 0) or 0),
+                        inspection_qc=float(row.get('inspection_qc', 0) or 0),
+                        certification=float(row.get('certification', 0) or 0),
+                        source="supabase"
+                    )
             except Exception as e:
                 logger.warning(f"Supabase extra_costs query failed: {e}, falling back to CSV")
         
@@ -530,30 +808,32 @@ class SupabaseDataAccessLayer(DataAccessLayer):
         # Step 1: Supabase에서 조회 시도
         if self.supabase_client:
             try:
-                # TODO: Supabase 쿼리 구현
-                # result = self.supabase_client.table('reference_transactions')\
-                #     .select('*')\
-                #     .eq('origin', spec.origin_country)\
-                #     .eq('destination', spec.destination_country)\
-                #     .order('transaction_date', desc=True)\
-                #     .limit(limit)\
-                #     .execute()
-                # 
-                # if result.data:
-                #     transactions = []
-                #     for row in result.data:
-                #         transactions.append(ReferenceTransaction(
-                #             product_category=row.get('product_category', ''),
-                #             origin=row.get('origin', ''),
-                #             destination=row.get('destination', ''),
-                #             fob_price_per_unit=float(row.get('fob_price_per_unit', 0)),
-                #             landed_cost_per_unit=float(row.get('landed_cost_per_unit', 0)),
-                #             volume=int(row.get('volume', 0)),
-                #             transaction_date=row.get('transaction_date', ''),
-                #             source="supabase"
-                #         ))
-                #     return transactions
-                pass
+                # Phase 5: 국가 이름 정규화
+                normalized_origin = normalize_country_name(spec.origin_country)
+                normalized_destination = normalize_country_name(spec.destination_country)
+                
+                result = self.supabase_client.table('reference_transactions')\
+                    .select('*')\
+                    .eq('origin', normalized_origin)\
+                    .eq('destination', normalized_destination)\
+                    .order('transaction_date', desc=True)\
+                    .limit(limit)\
+                    .execute()
+                
+                if result.data:
+                    transactions = []
+                    for row in result.data:
+                        transactions.append(ReferenceTransaction(
+                            product_category=row.get('product_category', ''),
+                            origin=row.get('origin', ''),
+                            destination=row.get('destination', ''),
+                            fob_price_per_unit=float(row.get('fob_price_per_unit', 0) or 0),
+                            landed_cost_per_unit=float(row.get('landed_cost_per_unit', 0) or 0),
+                            volume=int(row.get('volume', 0) or 0),
+                            transaction_date=str(row.get('transaction_date', '')),
+                            source="supabase"
+                        ))
+                    return transactions
             except Exception as e:
                 logger.warning(f"Supabase reference_transactions query failed: {e}, falling back to CSV")
         

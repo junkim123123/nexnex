@@ -1,0 +1,203 @@
+[
+    {
+        "input": "\uc0c8\uc6b0\uae61 5,000\ubd09\uc9c0 \ubbf8\uad6d\uc5d0 4\ub2ec\ub7ec\uc5d0 \ud314\uac70\uc57c",
+        "cost_scenarios": {
+            "base": 0.5191430399999999,
+            "best": 0.46722873600000003,
+            "worst": 0.5970144959999999
+        },
+        "risk_scores": {
+            "success_probability": 0.72,
+            "overall_risk_score": 28.0,
+            "price_risk": 35.0,
+            "lead_time_risk": 25.0,
+            "compliance_risk": 25.0,
+            "reputation_risk": 25.0,
+            "risk_breakdown": {
+                "price_risk_weight": 0.3,
+                "lead_time_risk_weight": 0.25,
+                "compliance_risk_weight": 0.25,
+                "reputation_risk_weight": 0.2
+            }
+        },
+        "used_fallbacks": [
+            "product_pricing"
+        ]
+    },
+    {
+        "input": "\ucd08\ucf54\ud30c\uc774 10,000\ubc15\uc2a4 \ubbf8\uad6d\uc5d0 2\ub2ec\ub7ec\uc529 \ud314 \uac70\uc57c",
+        "cost_scenarios": {
+            "base": 0.778554912,
+            "best": 0.7006994208,
+            "worst": 0.8953381488000001
+        },
+        "risk_scores": {
+            "success_probability": 0.72,
+            "overall_risk_score": 28.0,
+            "price_risk": 35.0,
+            "lead_time_risk": 25.0,
+            "compliance_risk": 25.0,
+            "reputation_risk": 25.0,
+            "risk_breakdown": {
+                "price_risk_weight": 0.3,
+                "lead_time_risk_weight": 0.25,
+                "compliance_risk_weight": 0.25,
+                "reputation_risk_weight": 0.2
+            }
+        },
+        "used_fallbacks": [
+            "product_pricing"
+        ]
+    },
+    {
+        "input": "Korean cookies to Germany",
+        "cost_scenarios": {
+            "base": 935.6936999999999,
+            "best": 842.12433,
+            "worst": 1.0760477549999998
+        },
+        "risk_scores": {
+            "success_probability": 0.95,
+            "overall_risk_score": -6.5,
+            "price_risk": -79.9,
+            "lead_time_risk": 25.0,
+            "compliance_risk": 25.0,
+            "reputation_risk": 25.0,
+            "risk_breakdown": {
+                "price_risk_weight": 0.3,
+                "lead_time_risk_weight": 0.25,
+                "compliance_risk_weight": 0.25,
+                "reputation_risk_weight": 0.2
+            }
+        },
+        "used_fallbacks": []
+    },
+    {
+        "input": "\uc2e0\ub77c\uba74 20,000\uac1c \ubbf8\uad6d\uc73c\ub85c \uc218\ucd9c",
+        "cost_scenarios": {
+            "base": 0.62283576,
+            "best": 0.560552184,
+            "worst": 0.7162611239999999
+        },
+        "risk_scores": {
+            "success_probability": 0.708,
+            "overall_risk_score": 29.2,
+            "price_risk": 35.0,
+            "lead_time_risk": 25.0,
+            "compliance_risk": 30.0,
+            "reputation_risk": 25.0,
+            "risk_breakdown": {
+                "price_risk_weight": 0.3,
+                "lead_time_risk_weight": 0.25,
+                "compliance_risk_weight": 0.25,
+                "reputation_risk_weight": 0.2
+            }
+        },
+        "used_fallbacks": [
+            "product_pricing"
+        ]
+    },
+    {
+        "input": "\uae40\uce58 1,000kg \uc720\ub7fd(\ub3c5\uc77c)\uc5d0 \uc218\ucd9c",
+        "cost_scenarios": {
+            "base": 3.115857,
+            "best": 2.8042713000000004,
+            "worst": 3.5832355499999995
+        },
+        "risk_scores": {
+            "success_probability": 0.638,
+            "overall_risk_score": 36.2,
+            "price_risk": 50.0,
+            "lead_time_risk": 45.0,
+            "compliance_risk": 0.0,
+            "reputation_risk": 50.0,
+            "risk_breakdown": {
+                "price_risk_weight": 0.3,
+                "lead_time_risk_weight": 0.25,
+                "compliance_risk_weight": 0.25,
+                "reputation_risk_weight": 0.2
+            }
+        },
+        "used_fallbacks": [
+            "product_pricing",
+            "freight",
+            "reference_transactions"
+        ]
+    },
+    {
+        "input": "KR\u2192US shrimp chips",
+        "cost_scenarios": {
+            "base": 519.819,
+            "best": 467.83709999999996,
+            "worst": 597.7918500000001
+        },
+        "risk_scores": {
+            "success_probability": 0.72,
+            "overall_risk_score": 28.0,
+            "price_risk": 35.0,
+            "lead_time_risk": 25.0,
+            "compliance_risk": 25.0,
+            "reputation_risk": 25.0,
+            "risk_breakdown": {
+                "price_risk_weight": 0.3,
+                "lead_time_risk_weight": 0.25,
+                "compliance_risk_weight": 0.25,
+                "reputation_risk_weight": 0.2
+            }
+        },
+        "used_fallbacks": [
+            "product_pricing"
+        ]
+    },
+    {
+        "input": "KR\u2192US ramen",
+        "cost_scenarios": {
+            "base": 623.5151999999999,
+            "best": 561.16368,
+            "worst": 717.0424800000001
+        },
+        "risk_scores": {
+            "success_probability": 0.708,
+            "overall_risk_score": 29.3,
+            "price_risk": 35.0,
+            "lead_time_risk": 25.0,
+            "compliance_risk": 30.0,
+            "reputation_risk": 25.0,
+            "risk_breakdown": {
+                "price_risk_weight": 0.3,
+                "lead_time_risk_weight": 0.25,
+                "compliance_risk_weight": 0.25,
+                "reputation_risk_weight": 0.2
+            }
+        },
+        "used_fallbacks": [
+            "product_pricing"
+        ]
+    },
+    {
+        "input": "KR\u2192EU cookies",
+        "cost_scenarios": {
+            "base": 780.357,
+            "best": 702.3213,
+            "worst": 897.41055
+        },
+        "risk_scores": {
+            "success_probability": 0.708,
+            "overall_risk_score": 29.2,
+            "price_risk": 50.0,
+            "lead_time_risk": 45.0,
+            "compliance_risk": 0.0,
+            "reputation_risk": 15.0,
+            "risk_breakdown": {
+                "price_risk_weight": 0.3,
+                "lead_time_risk_weight": 0.25,
+                "compliance_risk_weight": 0.25,
+                "reputation_risk_weight": 0.2
+            }
+        },
+        "used_fallbacks": [
+            "product_pricing",
+            "freight"
+        ]
+    }
+]
