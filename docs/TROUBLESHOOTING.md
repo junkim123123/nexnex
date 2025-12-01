@@ -75,7 +75,7 @@ authorized_users = [
 프로젝트 루트에 `.env` 파일이 있어야 합니다:
 
 ```env
-GEMINI_API_KEY=AIzaSyDCaPPN9g-eiLMkrC6nX0pS8rBqeJLlZRY
+GEMINI_API_KEY=AIzaSyBXVp9Jjd1W6lXD3RE9Z_HWGXT4RvYAHuA
 ```
 
 #### secrets.toml에 API 키 추가
@@ -83,7 +83,7 @@ GEMINI_API_KEY=AIzaSyDCaPPN9g-eiLMkrC6nX0pS8rBqeJLlZRY
 
 ```toml
 [external_api]
-gemini_api_key = "AIzaSyDCaPPN9g-eiLMkrC6nX0pS8rBqeJLlZRY"
+gemini_api_key = "AIzaSyBXVp9Jjd1W6lXD3RE9Z_HWGXT4RvYAHuA"
 ```
 
 ### 6. PostgreSQL 연결 오류
