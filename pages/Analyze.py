@@ -9,7 +9,6 @@ import re
 from utils.theme import GLOBAL_THEME_CSS
 from config.locales import DEFAULT_LANG
 from dotenv import load_dotenv
-from utils.auth import is_logged_in, authenticate_user, register_user, logout
 import time
 
 load_dotenv()
@@ -25,55 +24,12 @@ st.set_page_config(
 # --- 2. APPLY GLOBAL THEME ---
 st.markdown(GLOBAL_THEME_CSS, unsafe_allow_html=True)
 
-# --- 2.5. LOGIN/SIGNUP MODAL ---
-if st.session_state.get('show_login_modal', False):
-    st.markdown("### 🔐 로그인 또는 회원가입")
-    
-    # 탭 선택
-    tab1, tab2 = st.tabs(["로그인", "회원가입"])
-    
-    with tab1:
-        with st.form("login_form"):
-            login_email = st.text_input("이메일", key="login_email")
-            login_password = st.text_input("비밀번호", type="password", key="login_password")
-            login_submit = st.form_submit_button("로그인", use_container_width=True, type="primary")
-            
-            if login_submit:
-                success, error_msg = authenticate_user(login_email, login_password)
-                if success:
-                    st.session_state['logged_in'] = True
-                    st.session_state['user_email'] = login_email
-                    st.session_state['show_login_modal'] = False
-                    st.success("✅ 로그인 성공!")
-                    time.sleep(0.5)
-                    st.rerun()
-                else:
-                    st.error(f"❌ {error_msg}")
-    
-    with tab2:
-        with st.form("signup_form"):
-            signup_email = st.text_input("이메일", key="signup_email")
-            signup_password = st.text_input("비밀번호", type="password", key="signup_password")
-            signup_password_confirm = st.text_input("비밀번호 확인", type="password", key="signup_password_confirm")
-            signup_name = st.text_input("이름 (선택사항)", key="signup_name")
-            signup_submit = st.form_submit_button("회원가입", use_container_width=True, type="primary")
-            
-            if signup_submit:
-                if signup_password != signup_password_confirm:
-                    st.error("❌ 비밀번호가 일치하지 않습니다.")
-                else:
-                    success, message = register_user(signup_email, signup_password, signup_name)
-                    if success:
-                        st.success(f"✅ {message}")
-                        st.info("이제 로그인 탭에서 로그인하세요.")
-                    else:
-                        st.error(f"❌ {message}")
-    
-    if st.button("닫기", use_container_width=True):
-        st.session_state['show_login_modal'] = False
-        st.rerun()
-    
-    st.markdown("---")
+# 이메일 확인 (app.py에서 이미 수집했지만, 혹시 모를 경우를 대비)
+if not st.session_state.get('user_email'):
+    st.warning("📧 이메일이 필요합니다. 랜딩 페이지로 돌아가서 이메일을 입력해주세요.")
+    if st.button("← 랜딩 페이지로 돌아가기"):
+        st.switch_page("app.py")
+    st.stop()
 
 # Mobile responsive improvements (Sarah feedback)
 st.markdown("""
@@ -412,13 +368,6 @@ with button_col2:
 
 # --- 7. FORM SUBMISSION LOGIC ---
 if analyze_button:
-    # 로그인 체크
-    from utils.auth import is_logged_in
-    if not is_logged_in():
-        st.session_state['show_login_modal'] = True
-        st.warning("🔐 분석을 시작하려면 로그인이 필요합니다. 아래에서 로그인하거나 회원가입하세요.")
-        st.rerun()
-    
     user_input_clean = (st.session_state.get('user_input', '') or '').strip()
     
     if not user_input_clean:

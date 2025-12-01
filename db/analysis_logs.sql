@@ -16,9 +16,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS analysis_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     
-    -- Analysis metadata
-    user_input TEXT,                    -- Original user input text
-    product_name VARCHAR(255),           -- Detected/extracted product name
+            -- Analysis metadata
+            user_input TEXT,                    -- Original user input text
+            user_email VARCHAR(255),            -- User email address (collected for beta)
+            product_name VARCHAR(255),           -- Detected/extracted product name
     origin_country VARCHAR(100),         -- Origin country
     destination_country VARCHAR(100),    -- Destination country
     quantity INTEGER,                    -- Quantity/volume

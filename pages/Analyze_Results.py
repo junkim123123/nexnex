@@ -212,6 +212,7 @@ try:
                 # Insert analysis log
                 log_id = insert_analysis_log(
                     user_input=user_input,
+                    user_email=st.session_state.get('user_email'),
                     product_name=shipment_spec.product_name if hasattr(shipment_spec, 'product_name') else None,
                     origin_country=shipment_spec.origin_country if hasattr(shipment_spec, 'origin_country') else None,
                     destination_country=shipment_spec.destination_country if hasattr(shipment_spec, 'destination_country') else None,

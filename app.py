@@ -9,7 +9,70 @@ import time
 import hashlib
 
 # ============================================================================
-# Landing Page (로그인 없이 접근 가능)
+# Email Collection (이메일 수집 - 베타 단계)
+# ============================================================================
+
+def collect_email() -> bool:
+    """
+    이메일 주소를 수집하고 세션에 저장하는 함수
+    베타 단계에서는 로그인 없이 이메일만 수집하여 접근 제한
+    
+    Returns:
+        True if email is collected and valid, False otherwise
+    """
+    # 세션 상태 초기화
+    if 'user_email' not in st.session_state:
+        st.session_state['user_email'] = None
+    
+    # 이미 이메일이 수집된 경우
+    if st.session_state.get('user_email'):
+        return True
+    
+    # 이메일 수집 폼 표시
+    st.title("📧 NexSupply 베타 접근")
+    st.markdown("""
+        <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; 
+                    padding: 1rem; border-radius: 6px; margin-bottom: 2rem;">
+            <p style="color: #94a3b8; margin: 0; font-size: 0.9rem;">
+                베타 테스트에 참여해주셔서 감사합니다. 이메일 주소만 입력해주시면 바로 시작할 수 있습니다.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    with st.form("email_form", clear_on_submit=False):
+        email = st.text_input("이메일 주소:", placeholder="your-email@example.com", help="분석 결과와 업데이트 소식을 받을 이메일 주소를 입력해주세요")
+        submitted = st.form_submit_button("시작하기", use_container_width=True, type="primary")
+        
+        if submitted:
+            if not email:
+                st.error("이메일 주소를 입력해주세요.")
+                return False
+            
+            # 간단한 이메일 형식 검증
+            import re
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, email):
+                st.error("올바른 이메일 형식이 아닙니다.")
+                return False
+            
+            # 이메일을 세션 상태에 저장
+            st.session_state['user_email'] = email
+            st.success("✅ 시작합니다! 잠시 후 앱이 로드됩니다.")
+            time.sleep(0.5)
+            st.rerun()
+    
+    st.markdown("---")
+    st.caption("💡 이메일은 분석 결과 저장 및 업데이트 소식 전달에만 사용됩니다.")
+    
+    return False
+
+
+# 이메일 수집 확인 - 이메일이 없으면 여기서 종료
+if not collect_email():
+    st.stop()
+
+# ============================================================================
+# Main Application (이메일 수집 완료 후 접근 가능)
 # ============================================================================
 
 # Page configuration
