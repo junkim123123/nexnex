@@ -24,41 +24,12 @@ st.set_page_config(
 # --- 2. APPLY GLOBAL THEME ---
 st.markdown(GLOBAL_THEME_CSS, unsafe_allow_html=True)
 
-# 이메일 확인 (app.py에서 이미 수집했지만, 혹시 모를 경우를 대비)
+# --- 3. EMAIL VERIFICATION ---
 if not st.session_state.get('user_email'):
-    st.warning("📧 이메일이 필요합니다. 랜딩 페이지로 돌아가서 이메일을 입력해주세요.")
-    if st.button("← 랜딩 페이지로 돌아가기"):
+    st.warning("📧 Email required. Please return to the landing page to enter your email.")
+    if st.button("← Back to Landing Page"):
         st.switch_page("app.py")
     st.stop()
-
-# Mobile responsive improvements (Sarah feedback)
-st.markdown("""
-    <style>
-        @media (max-width: 768px) {
-            /* Stack input sections on mobile */
-            .main-container {
-                padding: 0.5rem !important;
-            }
-            
-            /* Make textarea full width on mobile */
-            textarea {
-                width: 100% !important;
-            }
-            
-            /* Adjust button sizes */
-            .stButton > button {
-                width: 100% !important;
-                margin-bottom: 0.5rem;
-            }
-            
-            /* Stack template buttons */
-            .template-button {
-                width: 100% !important;
-                margin-bottom: 0.5rem;
-            }
-        }
-    </style>
-""", unsafe_allow_html=True)
 
 # --- 3. SESSION STATE INITIALIZATION ---
 if 'language' not in st.session_state:
@@ -70,47 +41,42 @@ if 'shipment_input' in st.session_state:
     st.session_state.user_input = st.session_state.shipment_input.get('user_input', '')
 
 
-# --- 4. PAGE HEADER ---
-st.markdown("""
-    <div style="text-align: center; max-width: 900px; margin: 0 auto;">
-        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">📦 Import Cost Calculator</h1>
-        <p style="font-size: 1.1rem; color: #94a3b8; margin-top: 0.5rem; margin-bottom: 1.5rem;">
-            Calculate landed cost, profit margin, and risk for your import shipment in seconds.
-        </p>
-    </div>
-""", unsafe_allow_html=True)
+# --- 4. PAGE HEADER & INSTRUCTIONS ---
+st.title("📦 Import Cost Calculator")
+st.markdown(
+    "Calculate landed cost, profit margin, and risk for your import shipment in seconds."
+)
+st.markdown("---")
 
-# Clear instructions box with "Try it now" CTA (YC Feedback #1)
-col_instructions, col_button = st.columns([3, 1])
-with col_instructions:
-    st.markdown("""
-        <div style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
-            <h3 style="color: #60a5fa; font-size: 1.1rem; margin-top: 0; margin-bottom: 1rem;">📋 What this screen does</h3>
-            <p style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem;">
-                Simply describe your product and shipment details. We'll analyze:
-            </p>
-            <ul style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.8; margin-left: 1.5rem; margin-bottom: 1rem;">
-                <li><strong>Landed cost per unit</strong> (manufacturing + shipping + duty + fees)</li>
-                <li><strong>Profit margin</strong> based on your target retail price</li>
-                <li><strong>Risk assessment</strong> (price volatility, lead time, compliance, reputation)</li>
-                <li><strong>Success probability</strong> for this import deal</li>
-            </ul>
-            <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 1rem; border-radius: 6px; margin-top: 1rem;">
-                <p style="color: #6ee7b7; font-size: 0.9rem; margin: 0; font-weight: 600; margin-bottom: 0.5rem;">💡 Example input:</p>
-                <p style="color: #d1fae5; font-size: 0.95rem; margin: 0; font-family: 'Courier New', monospace; background: rgba(0, 0, 0, 0.2); padding: 0.75rem; border-radius: 4px;">
-                    "새우깡 5,000봉지 미국에 4달러에 팔거야"
-                </p>
-                <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
-                    Or in English: "I want to import 5,000 bags of shrimp chips from Korea and sell at $4 in the US"
-                </p>
-            </div>
+with st.container(border=True):
+    st.info(
+        """
+        **How it works:** Simply describe your product and shipment details below. We'll analyze:
+        - **Landed cost per unit** (manufacturing + shipping + duty + fees)
+        - **Profit margin** based on your target retail price
+        - **Risk assessment** (price volatility, lead time, compliance, reputation)
+        - **Success probability** for this import deal
+        """,
+        icon="📋"
+    )
+    
+    # Example in a separate, clear container
+    st.markdown(
+        """
+        <div style="background-color: rgba(30, 41, 59, 0.5); border-radius: 0.75rem; padding: 1rem; margin-top: 1rem;">
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 0.5rem;">💡 **Example Input:**</p>
+            <code style="background-color: rgba(15, 23, 42, 0.8); color: #e2e8f0; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-family: 'Courier New', monospace;">
+                "I want to import 5,000 bags of shrimp chips from Korea and sell at $4 in the US"
+            </code>
         </div>
-    """, unsafe_allow_html=True)
-with col_button:
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("⚡ Try Example", use_container_width=True, type="primary", help="Load example input to see how it works"):
-        st.session_state.user_input = "새우깡 5,000봉지 미국에 4달러에 팔거야"
-        st.rerun()
+        """,
+        unsafe_allow_html=True
+    )
+
+# "Try Example" button is more prominent now
+if st.button("⚡ Try Example", use_container_width=True, type="secondary", help="Load the example input to see how it works"):
+    st.session_state.user_input = "I want to import 5,000 bags of shrimp chips from Korea and sell at $4 in the US"
+    st.rerun()
 
 # First-time user: Auto-fill example if empty (YC Feedback #1)
 if 'first_visit' not in st.session_state and not st.session_state.get('user_input', '').strip():

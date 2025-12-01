@@ -7,87 +7,55 @@ import streamlit as st
 import streamlit.components.v1 as components
 import time
 
-# ============================================================================
-# Page Flow Control (페이지 흐름 제어)
-# ============================================================================
-
-def show_email_collection_page():
-    """이메일 수집 페이지 표시"""
-    st.title("📧 NexSupply 베타 접근")
-    st.markdown("""
-        <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; 
-                    padding: 1rem; border-radius: 6px; margin-bottom: 2rem;">
-            <p style="color: #94a3b8; margin: 0; font-size: 0.9rem;">
-                베타 테스트에 참여해주셔서 감사합니다. 이메일 주소만 입력해주시면 바로 시작할 수 있습니다.
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    with st.form("email_form", clear_on_submit=False):
-        email = st.text_input("이메일 주소:", placeholder="your-email@example.com", help="분석 결과와 업데이트 소식을 받을 이메일 주소를 입력해주세요")
-        submitted = st.form_submit_button("시작하기", use_container_width=True, type="primary")
-        
-        if submitted:
-            if not email:
-                st.error("이메일 주소를 입력해주세요.")
-                return False
-            
-            # 간단한 이메일 형식 검증
-            import re
-            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-            if not re.match(email_pattern, email):
-                st.error("올바른 이메일 형식이 아닙니다.")
-                return False
-            
-            # 이메일을 세션 상태에 저장
-            st.session_state['user_email'] = email
-            st.session_state['show_landing'] = False  # 랜딩 페이지 표시 안 함
-            st.success("✅ 시작합니다! 잠시 후 앱이 로드됩니다.")
-            time.sleep(0.5)
-            st.rerun()
-    
-    st.markdown("---")
-    st.caption("💡 이메일은 분석 결과 저장 및 업데이트 소식 전달에만 사용됩니다.")
-    
-    if st.button("← 랜딩 페이지로 돌아가기"):
-        st.session_state['show_landing'] = True
-        st.session_state['show_email_page'] = False
-        st.rerun()
-
-# 페이지 상태 초기화
-if 'show_landing' not in st.session_state:
-    st.session_state['show_landing'] = True  # 처음에는 랜딩 페이지 표시
-if 'show_email_page' not in st.session_state:
-    st.session_state['show_email_page'] = False
-if 'user_email' not in st.session_state:
-    st.session_state['user_email'] = None
-
-# 페이지 흐름 제어
-if st.session_state.get('show_landing', True) and not st.session_state.get('user_email'):
-    # 랜딩 페이지 표시 (이메일이 없을 때만)
-    pass  # 랜딩 페이지는 아래에서 표시됨
-elif not st.session_state.get('user_email'):
-    # 이메일 수집 페이지 표시
-    st.session_state['show_email_page'] = True
-    st.session_state['show_landing'] = False
-    show_email_collection_page()
-    st.stop()
-else:
-    # 이메일이 이미 수집된 경우 - 메인 앱 표시
-    st.session_state['show_landing'] = False
-    st.session_state['show_email_page'] = False
-
-# ============================================================================
-# Landing Page (랜딩 페이지 - 첫 화면)
-# ============================================================================
-
-# Page configuration
+# --- Page Configuration (Must be the first Streamlit command) ---
 st.set_page_config(
     page_title="NexSupply - Global Sourcing Intelligence",
     layout="wide",
     page_icon="📦",
     initial_sidebar_state="collapsed"
 )
+
+# --- Session State Initialization ---
+if 'user_email' not in st.session_state:
+    st.session_state.user_email = None
+if 'show_email_form' not in st.session_state:
+    st.session_state.show_email_form = False
+
+# --- Email Collection Form ---
+def show_email_form():
+    """Displays the email collection form."""
+    st.title("📧 NexSupply Beta Access")
+    st.markdown("""
+        <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6;
+                    padding: 1rem; border-radius: 6px; margin-bottom: 2rem;">
+            <p style="color: #94a3b8; margin: 0; font-size: 0.9rem;">
+                Thanks for joining the beta. Enter your email to get started.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    with st.form("email_form", clear_on_submit=False):
+        email = st.text_input("Email Address:", placeholder="your-email@example.com", help="We'll send analysis results and updates here.")
+        submitted = st.form_submit_button("Get Started", use_container_width=True, type="primary")
+        
+        if submitted:
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not email or not re.match(email_pattern, email):
+                st.error("Please enter a valid email address.")
+            else:
+                st.session_state.user_email = email
+                st.session_state.show_email_form = False
+                st.success("✅ Welcome! The app will now load.")
+                time.sleep(0.5)
+                st.rerun()
+
+    if st.button("← Back to Landing Page"):
+        st.session_state.show_email_form = False
+        st.rerun()
+
+# ============================================================================
+# Landing Page (랜딩 페이지 - 첫 화면)
+# ============================================================================
 
 # 사용자 환영 메시지 (선택사항)
 if st.session_state.get('user_email'):
@@ -583,7 +551,8 @@ def main():
         """, unsafe_allow_html=True)
     with nav_col2:
         if st.button("🚀 Start Free Analysis", use_container_width=True, type="primary"):
-            st.switch_page("pages/Analyze.py")
+            st.session_state.show_email_form = True
+            st.rerun()
     
     # Hero Section - Using Streamlit Columns for Reliable Rendering
     st.markdown("""
@@ -804,20 +773,11 @@ def main():
             
             # Button - Start a Free Shipment Analysis (consistent CTA)
             if st.button("Start a Free Shipment Analysis", use_container_width=True, type="primary", key="hero_analyze_btn", disabled=False):
-                # 랜딩 페이지에서 이메일 수집 페이지로 이동
-                if not st.session_state.get('user_email'):
-                    st.session_state['show_landing'] = False
-                    st.session_state['show_email_page'] = True
-                    st.rerun()
-                else:
-                    st.switch_page("pages/Analyze.py")
+                # Show email form to begin the analysis process
+                st.session_state.show_email_form = True
                 if hero_product_input and len(hero_product_input.strip()) >= 10:
-                    # 입력값 저장
                     st.session_state.user_input = hero_product_input.strip()
-                    # 바로 Analyze 페이지로 이동
-                    st.switch_page("pages/Analyze.py")
-                else:
-                    st.warning("Please enter a product description (at least 10 characters).")
+                st.rerun()
     
     with hero_col_right:
         # Dashboard Card - Render using components.html in iframe (guaranteed DOM rendering)
@@ -1099,7 +1059,8 @@ def main():
     col_cta1, col_cta2, col_cta3 = st.columns([1, 2, 1])
     with col_cta2:
         if st.button("Start a Free Shipment Analysis", use_container_width=True, type="primary", key="footer_cta"):
-            st.switch_page("pages/Analyze.py")
+            st.session_state.show_email_form = True
+            st.rerun()
     
     # Footer
     st.markdown("""
@@ -1113,10 +1074,13 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-# Streamlit은 if __name__ == "__main__" 블록을 실행하지 않으므로 직접 호출
-# 랜딩 페이지를 표시할 때만 main() 실행
-if st.session_state.get('show_landing', True) and not st.session_state.get('user_email'):
-    main()
-elif st.session_state.get('user_email'):
-    # 이메일이 있으면 Analyze 페이지로 리다이렉트
+# --- Main Application Logic ---
+if st.session_state.user_email:
+    # If email is collected, go directly to the analysis tool
     st.switch_page("pages/Analyze.py")
+elif st.session_state.show_email_form:
+    # If user clicked to start, show the email form
+    show_email_form()
+else:
+    # Otherwise, show the main landing page
+    main()
