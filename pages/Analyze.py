@@ -10,6 +10,7 @@ from utils.theme import GLOBAL_THEME_CSS
 from config.locales import DEFAULT_LANG
 from dotenv import load_dotenv
 from utils.auth import is_logged_in, authenticate_user, register_user, logout
+import time
 
 load_dotenv()
 
