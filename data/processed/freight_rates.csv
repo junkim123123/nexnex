@@ -1,0 +1,5 @@
+origin,destination,carrier,rate_per_kg,volume_discount_threshold_kg,volume_discount_percent
+Shanghai,Los Angeles,Maersk,2.5,1000,5
+Shanghai,New York,CMA CGM,3.1,1200,7
+Ningbo,Los Angeles,COSCO,2.4,1000,5
+Shenzhen,South Korea,Evergreen,1.8,800,4

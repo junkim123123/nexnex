@@ -1,0 +1,198 @@
+{
+  "disclaimer": "This table is a non-exhaustive heuristic for flagging potential U.S. import compliance issues based on product keywords. It is not legal advice. Always confirm requirements with a qualified compliance professional or customs broker.",
+  "categories": [
+    {
+      "category": "Food/Supplements",
+      "rules": [
+        {
+          "trigger_keywords": ["candy", "snack", "chocolate", "gum", "cookie", "chips", "cracker"],
+          "regulations": [
+            "FDA Food Facility Registration (21 CFR 1.225)",
+            "FSVP – Foreign Supplier Verification Program",
+            "Prior Notice of Imported Food (FD&C Act 801(m))"
+          ],
+          "warning_message": "This looks like a human food product imported into the U.S. — FDA facility registration, Prior Notice before shipment, and importer FSVP obligations are likely required."
+        },
+        {
+          "trigger_keywords": ["vitamin", "supplement", "gummy vitamin", "collagen", "probiotic", "omega 3", "fish oil"],
+          "regulations": [
+            "Dietary Supplement Health and Education Act (DSHEA)",
+            "Dietary Supplement cGMPs (21 CFR Part 111)",
+            "FDA Labeling Requirements for Dietary Supplements"
+          ],
+          "warning_message": "Dietary supplements entering the U.S. must meet FDA dietary supplement cGMPs and strict labeling rules for Supplement Facts, ingredients, and structure/function claims."
+        },
+        {
+          "trigger_keywords": ["protein powder", "nutrition powder", "meal replacement", "pre workout", "post workout"],
+          "regulations": [
+            "FDA Food Facility Registration",
+            "Dietary Supplement / Conventional Food Labeling (21 CFR 101)",
+            "Prior Notice of Imported Food"
+          ],
+          "warning_message": "Powdered nutrition products can be regulated as foods or dietary supplements; ensure FDA registration, Prior Notice filing, and compliant labeling before shipping."
+        },
+        {
+          "trigger_keywords": ["infant formula", "baby formula", "toddler formula"],
+          "regulations": [
+            "Infant Formula Act",
+            "21 CFR Parts 106 and 107 – Infant Formula Requirements",
+            "FDA Prior Notice and Facility Registration"
+          ],
+          "warning_message": "Infant formula has special FDA formulation, testing, recall, and registration requirements; importing without a specialized compliance plan is extremely high risk."
+        }
+      ]
+    },
+    {
+      "category": "Children/Toys",
+      "rules": [
+        {
+          "trigger_keywords": ["toy", "toy set", "play set", "plush", "doll", "action figure", "kids toy"],
+          "regulations": [
+            "CPSIA – Consumer Product Safety Improvement Act",
+            "ASTM F963 – Standard Consumer Safety Specification for Toy Safety",
+            "Children's Product Certificate (CPC) Requirements"
+          ],
+          "warning_message": "Products marketed as toys for children under 14 generally require CPSIA compliance, ASTM F963 testing, and a Children's Product Certificate before U.S. import."
+        },
+        {
+          "trigger_keywords": ["baby", "toddler", "teether", "pacifier", "rattle", "baby toy"],
+          "regulations": [
+            "CPSIA – Lead and phthalate limits",
+            "ASTM F963 and age-graded small parts rules",
+            "Tracking label requirements for children's products"
+          ],
+          "warning_message": "Baby and toddler products face strict CPSIA limits on lead, phthalates, and small parts, plus mandatory tracking labels and accredited third-party testing."
+        },
+        {
+          "trigger_keywords": ["kids clothes", "children clothing", "kids pajamas", "sleepwear", "onesie"],
+          "regulations": [
+            "CPSIA – Children's Apparel",
+            "Flammable Fabrics Act – Children's Sleepwear (16 CFR 1615/1616)",
+            "Tracking label and registration requirements"
+          ],
+          "warning_message": "Children's apparel — especially sleepwear — must comply with flammability standards, CPSIA testing, and tracking label rules before entering the U.S."
+        }
+      ]
+    },
+    {
+      "category": "Electronics",
+      "rules": [
+        {
+          "trigger_keywords": ["battery", "lithium", "power bank", "rechargeable", "li-ion", "li ion"],
+          "regulations": [
+            "UN38.3 – Transport of Lithium Batteries",
+            "U.S. DOT / IATA Dangerous Goods Regulations",
+            "UL / IEC Safety Standards (often required by buyers)"
+          ],
+          "warning_message": "Lithium battery products usually require UN38.3 test reports and must follow dangerous goods rules for air and ocean transport; many U.S. buyers also expect UL/IEC safety certifications."
+        },
+        {
+          "trigger_keywords": ["charger", "adapter", "ac adapter", "power supply", "usb charger"],
+          "regulations": [
+            "Electrical Safety Standards (e.g., UL, ETL, IEC 62368-1)",
+            "U.S. National Electrical Code and retailer-specific requirements"
+          ],
+          "warning_message": "Chargers and power supplies typically need recognized safety certifications (UL/ETL) to be accepted by major U.S. retailers, insurers, and marketplaces."
+        },
+        {
+          "trigger_keywords": ["bluetooth", "wireless", "wifi", "rf", "smart device", "iot"],
+          "regulations": [
+            "FCC Part 15 – Radio Frequency Devices",
+            "FCC Equipment Authorization (Certification or SDoC)"
+          ],
+          "warning_message": "Wireless and Bluetooth products must complete FCC testing and equipment authorization before being marketed or imported into the U.S."
+        },
+        {
+          "trigger_keywords": ["led", "lamp", "lighting", "light strip", "flashlight"],
+          "regulations": [
+            "FCC Part 15 (unintentional radiators)",
+            "UL / ETL Safety Standards for Luminaires",
+            "Energy efficiency / labeling rules for certain lamps"
+          ],
+          "warning_message": "LED lighting products may require FCC EMC testing and safety certifications, and certain categories face additional energy efficiency and labeling rules in the U.S."
+        }
+      ]
+    },
+    {
+      "category": "Beauty/Cosmetics",
+      "rules": [
+        {
+          "trigger_keywords": ["cream", "lotion", "serum", "toner", "essence", "skin care", "mask pack", "sheet mask"],
+          "regulations": [
+            "FDA MoCRA – Modernization of Cosmetics Regulation Act",
+            "Cosmetic Facility Registration and Product Listing",
+            "Cosmetic Labeling (21 CFR 701)"
+          ],
+          "warning_message": "Skin-care cosmetics now fall under FDA MoCRA — facilities must register, products may need listing, and labels must follow U.S. ingredient and warning requirements."
+        },
+        {
+          "trigger_keywords": ["shampoo", "conditioner", "body wash", "soap", "scrub"],
+          "regulations": [
+            "MoCRA Cosmetic Requirements",
+            "Ingredient and fragrance allergen disclosure rules",
+            "Claims review for possible OTC drug classification"
+          ],
+          "warning_message": "Personal-care products must meet U.S. cosmetic labeling rules and, if they make drug-like claims (e.g., treating dandruff or acne), may be regulated as OTC drugs."
+        },
+        {
+          "trigger_keywords": ["sunscreen", "acne treatment", "whitening", "antiperspirant"],
+          "regulations": [
+            "FDA OTC Drug Monographs",
+            "Drug Facts Label Requirements",
+            "MoCRA Cosmetic/Drug Overlap Compliance"
+          ],
+          "warning_message": "Products like sunscreen, strong acne treatments, or antiperspirants are usually regulated as OTC drugs in the U.S. and require Drug Facts labeling and monograph compliance."
+        },
+        {
+          "trigger_keywords": ["lipstick", "lip balm", "eye shadow", "eyeliner", "blush", "makeup"],
+          "regulations": [
+            "MoCRA – Cosmetic Safety Substantiation",
+            "Color Additive Regulations (21 CFR Parts 70–82)",
+            "Labeling for eye-area and lip products"
+          ],
+          "warning_message": "Color cosmetics must use FDA-permitted color additives and maintain safety substantiation and proper labeling, especially for eye and lip use."
+        }
+      ]
+    },
+    {
+      "category": "Textile/Apparel",
+      "rules": [
+        {
+          "trigger_keywords": ["t shirt", "shirt", "hoodie", "sweatshirt", "pants", "jeans", "dress", "skirt", "jacket"],
+          "regulations": [
+            "Flammable Fabrics Act (16 CFR 1610 – General Wearing Apparel)",
+            "Textile Fiber Products Identification Act",
+            "Country of Origin Labeling Requirements"
+          ],
+          "warning_message": "General apparel imported into the U.S. must meet flammability standards and carry correct fiber content, manufacturer/RN, and country-of-origin labels."
+        },
+        {
+          "trigger_keywords": ["baby clothes", "baby romper", "baby bodysuit", "children clothes", "kids shirt", "kids pajama"],
+          "regulations": [
+            "Flammable Fabrics Act – Children's Sleepwear (16 CFR 1615/1616, if applicable)",
+            "CPSIA – Lead, phthalates, and tracking labels",
+            "Textile Labeling Rules for Children's Apparel"
+          ],
+          "warning_message": "Baby and children's apparel face extra CPSIA and flammability requirements plus mandatory tracking labels; failing these can lead to recalls or seizure at U.S. customs."
+        },
+        {
+          "trigger_keywords": ["sleepwear", "pajama", "nightgown", "robe"],
+          "regulations": [
+            "Flammable Fabrics Act – Sleepwear Flammability (16 CFR 1615/1616)",
+            "CPSIA for Children's Sleepwear (if marketed for kids)"
+          ],
+          "warning_message": "Sleepwear and pajamas are tightly regulated for flammability; children's sleepwear especially requires specific fabric performance and testing certifications."
+        },
+        {
+          "trigger_keywords": ["made in usa", "usa made", "american made"],
+          "regulations": [
+            "FTC 'Made in USA' Labeling Standard",
+            "Country of Origin and Qualified U.S. Origin Claims"
+          ],
+          "warning_message": "Using 'Made in USA' on labels or marketing requires that virtually all significant processing and materials are of U.S. origin under FTC standards; imported goods generally cannot use this claim."
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,5 @@
+product_id,product_name,category,fob_price_usd,quantity,origin,destination,transaction_date
+101,Wireless Headphones,Electronics,25.5,5000,Shenzhen,USA,2023-10-15
+102,Yoga Mat,Sports & Outdoors,8.2,10000,Ningbo,EU,2023-10-20
+103,Electric Kettle,Home & Kitchen,12.75,3000,Guangzhou,USA,2023-11-02
+104,Gaming Mouse,Electronics,18.9,7500,Shanghai,South Korea,2023-11-05

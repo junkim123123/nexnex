@@ -1,0 +1,175 @@
+# Cursor Rules for NexSupply-AI
+
+You are a senior staff engineer working full-time on the NexSupply-AI repo.
+
+This repository has TWO big parts:
+- Python backend (app.py, api/, services/, src/, utils/, pages/) that implements the AI sourcing analysis engine.
+- Next.js landing page under frontend/landing-page/ for marketing and the public website.
+
+Your job inside Cursor:
+- Keep the backend ANALYSIS PIPELINE reliable and extendable.
+- Keep the public-facing behavior and API contracts stable.
+- Obey all constraints and priorities defined in `.clinerules` above any other suggestion.
+
+--------------------------------------------------
+0. BOOT SEQUENCE
+--------------------------------------------------
+
+When I open a new chat in Cursor for this repo:
+
+1. First, silently open and read:
+   - `.clinerules`
+   - `.cursorrules` (this file)
+   - `ARCHITECTURE.md`
+   - `PLAN.md`
+   - `PROJECT_STATUS.md`
+   - `QUICK_START.md` (if present)
+2. Build a mental model of:
+   - How user input flows through `pages/Analyze.py` → `services/` → `src/ai_pipeline.py` → `report_service.py` etc.
+   - How compliance and tariff rules are read from `data/compliance_rules_us.json` and other data files.
+3. DO NOT start editing files until you have:
+   - Summarized in 5–10 bullet points what this project does and
+   - Listed the 3–5 most promising places for technical improvement.
+
+--------------------------------------------------
+1. GLOBAL PRIORITIES
+--------------------------------------------------
+
+Follow these priority rules whenever you work:
+
+1) Business & Safety first
+   - Follow the BUSINESS GOALS, SPEED, and SAFETY tradeoffs defined in `.clinerules`.
+   - If clean-code ideals conflict with shipping a stable, working feature, choose the WORKING FEATURE.
+   - Never break core flows (Analyze → Results, DDP cost breakdown, risk/compliance verdicts) without explicit instruction.
+
+2) Backwards compatibility
+   - Do not change function names, module paths, or JSON response shapes that are obviously used by the UI (Streamlit pages, Next.js landing page, API models) unless:
+     - There is a clear bug OR
+     - You also update every caller within this repo.
+
+3) Small, safe steps
+   - Prefer many small patches over one huge refactor.
+   - Keep diffs localized to a few files at a time.
+   - Always think about edge cases: missing inputs, malformed JSON from LLM, timeouts, and external service failures (Ollama, DB, network).
+
+4) Single source of truth
+   - Respect `data/compliance_rules_us.json` and other data files as the canonical rule sources.
+   - If you add new business logic, put it near existing rule engines (services/, core/, or data/) instead of scattering constants across random files.
+
+--------------------------------------------------
+2. FILE MAP & ENTRY POINTS
+--------------------------------------------------
+
+When you need to understand or modify behavior, use this map:
+
+- `app.py`
+  - Main application entry. Orchestrates high-level app startup.
+- `api/`
+  - Public API structure (versioned under api/v1).
+  - Models and pydantic schemas live in `api/models/`.
+- `pages/`
+  - Streamlit-like or page-level entry files:
+    - `Analyze.py`        → Input form for analysis.
+    - `Analyze_Results.py`→ Result screen logic.
+    - `Results.py`        → General results page.
+- `services/`
+  - Business logic modules:
+    - `analysis_service.py`     → High-level analysis orchestration.
+    - `logistics_calculator.py` → Freight & logistics costing.
+    - `duty_calculator.py`      → Duty & tariff logic.
+    - `fba_calculator*.py`      → FBA / channel-specific cost logic.
+    - `compliance.py`           → Regulatory & compliance rules.
+    - `risk_engine.py`          → Risk scoring.
+    - `report_service.py`       → Final report assembly.
+    - `verdict_calculator.py`   → Final PROCEED / CAUTION / AVOID style verdicts.
+- `src/`
+  - Core plumbing / infra:
+    - `ai_pipeline.py`   → Main AI pipeline orchestration (parsing, calling LLM, combining results).
+    - `ollama_client.py` → Local LLM client (Ollama + dolphin3/llama3).
+    - `db.py`            → Local DB / persistence layer.
+    - `parser.py`        → Input parsing and validation glue.
+- `utils/`
+  - Cross-cutting utilities:
+    - `logger.py`, `secure_logger.py`, `logging_utils.py`
+    - `error_handler.py`
+    - `comparison_helper.py`, `chart_helpers.py`, `formatters.py`
+    - `theme.py` → visual/style helpers.
+- `tests/`
+  - All tests live here. Whenever you touch a module, check for an existing test file and keep it up to date.
+
+Whenever you are unsure where something belongs:
+- Infra & pipeline glue → `src/`
+- Domain business rules → `services/`
+- Reusable helpers → `utils/`
+- HTTP / UI / page orchestration → `pages/` or `api/`
+
+--------------------------------------------------
+3. CHAT BEHAVIOR INSIDE CURSOR
+--------------------------------------------------
+
+General behavior:
+- Answer briefly and concretely.
+- Show code diffs using minimal patches.
+- Whenever possible, include the exact file path in your explanations.
+- Propose shell commands (for tests, lint, etc.) but DO NOT assume they already ran unless the user confirms.
+
+Special trigger phrase:
+- If the user message contains `[Auto-Mode ON]`, assume:
+  - The user allows you to follow the multi-step workflow from `.clinerules` WITHOUT asking for further confirmation.
+  - You should:
+    1) ANALYZE the current code around the requested area.
+    2) PLAN a short list of edits.
+    3) APPLY small, safe changes.
+    4) SUGGEST tests/commands to validate.
+    5) LOG a short summary and "Next TODOs" into `PROJECT_STATUS.md` under a dated heading, if that file exists.
+
+Questions:
+- Only ask clarification questions if:
+  - You are about to choose between two incompatible designs OR
+  - A change might break an external integration (e.g., public API contract).
+- Otherwise, make a best-effort decision that preserves backward compatibility and explicitly document it in comments or `PROJECT_STATUS.md`.
+
+--------------------------------------------------
+4. PYTHON / TYPES / TESTING CONVENTIONS
+--------------------------------------------------
+
+Python:
+- Target modern Python (3.10+). Use type hints where they add clarity, but do not obsessively type every single local variable.
+- Prefer standard library and simple patterns over heavy new dependencies.
+- Keep imports organized and avoid circular dependencies between `services/` and `src/`.
+
+Error handling:
+- Use clear, domain-specific exceptions in `core/errors.py` or `utils/error_handler.py`.
+- Never swallow exceptions silently. Log with the secure logger and return a stable, user-friendly error message to the UI.
+
+Logging:
+- Use `secure_logger` or `logger` helpers.
+- Do NOT log secrets, API keys, or raw PII (emails, addresses, etc.).
+- For each major pipeline step, prefer one structured log line over many noisy prints.
+
+Testing:
+- When you change logic in `services/` or `src/`, check for an existing test in `tests/`.
+- If an obvious case is missing, add a small, focused unit test:
+  - Name: `test_<module>.py`
+  - Style: pytest, clear assertions, no heavy fixtures unless really needed.
+
+--------------------------------------------------
+5. FRONTEND (landing-page) GUIDELINES
+--------------------------------------------------
+
+- The Next.js app under `frontend/landing-page/` is the marketing site.
+- Do NOT drastically change copy or layout unless asked; focus on:
+  - Type safety (TypeScript),
+  - Removing dead code,
+  - Fixing obvious bugs and layout glitches,
+  - Improving DX (component reuse, props types, etc.).
+- If you need to change design, try to reuse existing components in `app/` and `components/` instead of creating many similar ones.
+
+--------------------------------------------------
+6. FINAL REMINDERS
+--------------------------------------------------
+
+- `.clinerules` is the CTO-level constitution. If anything in this file conflicts with `.clinerules`, follow `.clinerules`.
+- Always think like a long-term teammate:
+  - Code should be easy for a human junior dev to understand.
+  - Leave breadcrumbs (comments, docstrings, or `PROJECT_STATUS.md` notes) so the next person knows why you made a decision.
