@@ -33,15 +33,33 @@ jobs:
       run: gcloud auth configure-docker -q
     
     - name: Build Docker image
+      env:
+        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       run: |
+        if [ -z "$PROJECT_ID" ]; then
+          echo "ERROR: GCP_PROJECT_ID secret is not set"
+          exit 1
+        fi
         docker build -f docker/Dockerfile -t gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA .
     
     - name: Push Docker image
+      env:
+        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       run: |
+        if [ -z "$PROJECT_ID" ]; then
+          echo "ERROR: GCP_PROJECT_ID secret is not set"
+          exit 1
+        fi
         docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
     
     - name: Deploy to Cloud Run
+      env:
+        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       run: |
+        if [ -z "$PROJECT_ID" ]; then
+          echo "ERROR: GCP_PROJECT_ID secret is not set"
+          exit 1
+        fi
         gcloud run deploy $SERVICE_NAME \
           --image gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA \
           --platform managed \
