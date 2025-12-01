@@ -214,21 +214,21 @@ def insert_analysis_log(
             full_result_json = json.dumps(full_result) if full_result else None
             
             # Insert query
-                    insert_query = """
-                        INSERT INTO analysis_logs (
-                            user_input, user_email, product_name, origin_country, destination_country,
+            insert_query = """
+                INSERT INTO analysis_logs (
+                    user_input, user_email, product_name, origin_country, destination_country,
                     quantity, target_retail_price, target_retail_currency,
                     landed_cost_per_unit, net_margin_percent, success_probability,
                     overall_risk_score, price_risk, lead_time_risk, compliance_risk,
                     reputation_risk, verdict, used_fallbacks, reference_transaction_count,
                     full_result, status, error_message
-                        ) VALUES (
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                        ) RETURNING id
-                    """
-
-                    cursor.execute(insert_query, (
-                        user_input, user_email, product_name, origin_country, destination_country,
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                ) RETURNING id
+            """
+            
+            cursor.execute(insert_query, (
+                user_input, user_email, product_name, origin_country, destination_country,
                 quantity, target_retail_price, target_retail_currency,
                 landed_cost_per_unit, net_margin_percent, success_probability,
                 overall_risk_score, price_risk, lead_time_risk, compliance_risk,
