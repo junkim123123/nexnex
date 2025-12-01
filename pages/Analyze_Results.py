@@ -81,18 +81,28 @@ try:
         update_status(STATUS_CONNECTING, 10, hint="Parsing your shipment details")
         
         # Get API key (optimized: check once)
+        # Priority: external_api.gemini_api_key → GEMINI_API_KEY → environment variable
         api_key = None
         if hasattr(st, 'secrets'):
             try:
-                api_key = st.secrets.get("GEMINI_API_KEY")
-            except:
-                pass
+                # Try external_api section first
+                if 'external_api' in st.secrets and 'gemini_api_key' in st.secrets['external_api']:
+                    api_key = st.secrets['external_api']['gemini_api_key']
+                # Fallback to root level
+                elif 'GEMINI_API_KEY' in st.secrets:
+                    api_key = st.secrets['GEMINI_API_KEY']
+            except Exception as e:
+                import logging
+                logging.warning(f"Could not read API key from secrets: {e}")
         
         if not api_key:
             import os
             from dotenv import load_dotenv
             load_dotenv()
             api_key = os.getenv("GEMINI_API_KEY")
+        
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not found. Please configure it in Streamlit Secrets or .env file.")
         
         # Step 2: Authenticating
         update_status(STATUS_AUTHENTICATING, 20, hint="Parsing your shipment details")
@@ -120,16 +130,16 @@ try:
                     shipment_spec = ShipmentSpec(**shipment_spec_dict)
                 except Exception:
                     # If cached spec is invalid, re-parse
-                    shipment_spec = parse_user_input(user_input)
+                    shipment_spec = parse_user_input(user_input, api_key=api_key)
                     st.session_state['shipment_spec'] = shipment_spec.model_dump()
             else:
                 # Parse fresh
-                shipment_spec = parse_user_input(user_input)
+                shipment_spec = parse_user_input(user_input, api_key=api_key)
                 st.session_state['shipment_spec'] = shipment_spec.model_dump()
             
             # Step 4: Run analysis with new engine
             update_status(STATUS_ANALYZING, 60, COLOR_CYAN, hint="Calculating costs and risks")
-            result = run_analysis(shipment_spec)
+            result = run_analysis(shipment_spec, api_key=api_key)
             
         except Exception as e:
             import logging
