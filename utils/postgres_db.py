@@ -24,21 +24,37 @@ def get_database_url() -> Optional[str]:
     Get PostgreSQL database URL from environment variables.
     
     Priority:
-    1. DATABASE_URL (full connection string)
-    2. Individual components (DATABASE_HOST, DATABASE_USER, etc.)
-    3. Streamlit Secrets (if available)
+    1. Streamlit Secrets (connections.postgresql or DATABASE_URL)
+    2. Environment variables (DATABASE_URL or individual components)
     
     Returns:
         Database connection URL or None if not configured
     """
-    import streamlit as st
+    # Try Streamlit Secrets first (for Streamlit Cloud)
+    try:
+        import streamlit as st
+    except ImportError:
+        st = None
     
     # Try Streamlit Secrets first (for Streamlit Cloud)
-    if hasattr(st, 'secrets'):
+    if st and hasattr(st, 'secrets'):
         try:
+            # Method 1: Full DATABASE_URL
             if 'DATABASE_URL' in st.secrets:
                 return st.secrets['DATABASE_URL']
-            # Or try individual components
+            
+            # Method 2: connections.postgresql section (Streamlit native format)
+            if 'connections' in st.secrets and 'postgresql' in st.secrets['connections']:
+                pg_config = st.secrets['connections']['postgresql']
+                host = pg_config.get('host')
+                user = pg_config.get('username') or pg_config.get('user')
+                password = pg_config.get('password')
+                database = pg_config.get('database') or pg_config.get('db')
+                port = str(pg_config.get('port', '5432'))
+                if all([host, user, password, database]):
+                    return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+            
+            # Method 3: Individual components at root level
             if all(key in st.secrets for key in ['DATABASE_HOST', 'DATABASE_USER', 'DATABASE_PASSWORD', 'DATABASE_NAME']):
                 host = st.secrets['DATABASE_HOST']
                 user = st.secrets['DATABASE_USER']

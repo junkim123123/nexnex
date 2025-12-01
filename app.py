@@ -57,7 +57,14 @@ def check_login() -> bool:
                 
                 # 사용자 인증 확인
                 for user in authorized_users:
-                    if email == user.get('email') and password == user.get('password'):
+                    user_email = user.get('email', '')
+                    user_password = user.get('password', '')
+                    
+                    # 와일드카드 이메일 지원 ("*"는 모든 이메일 허용)
+                    email_match = (user_email == "*" or email == user_email)
+                    password_match = (password == user_password)
+                    
+                    if email_match and password_match:
                         st.session_state['logged_in'] = True
                         st.session_state['user_email'] = email
                         is_valid = True
