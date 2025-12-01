@@ -3,7 +3,6 @@ NexSupply AI - Analysis Processing Page
 This page handles the actual AI analysis and redirects to Results page.
 """
 import streamlit as st
-from src.ai import analyze_input
 from utils.error_handler import handle_error_with_retry_button
 from utils.theme import LOADING_ANIMATION_CSS
 from config.constants import (
