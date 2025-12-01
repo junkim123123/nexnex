@@ -244,34 +244,48 @@ try:
         st.rerun()
         
 except Exception as e:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error(f"Analysis failed: {e}", exc_info=True)
+    
     progress_bar.progress(100)
     status_text.text("❌ Analysis failed")
     
     # Show error with retry option
-    error_info = handle_error_with_retry_button(
-        error=e,
-        retry_callback=lambda: st.session_state.update({'analysis_status': None}),
-        lang="ko"
-    )
-    
-    # Display error information
-    st.error(f"**{error_info['title']}**")
-    st.warning(error_info['message'])
-    
-    if error_info.get('suggestion'):
-        st.info(f"💡 {error_info['suggestion']}")
-    
-    # Retry button if applicable
-    if error_info.get('can_retry') and error_info.get('retry_callback'):
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🔄 다시 시도", type="primary"):
-                error_info['retry_callback']()
-                st.rerun()
-        with col2:
+    try:
+        error_info = handle_error_with_retry_button(
+            error=e,
+            retry_callback=lambda: st.session_state.update({'analysis_status': None}),
+            lang="ko"
+        )
+        
+        # Display error information
+        st.error(f"**{error_info.get('title', '오류 발생')}**")
+        st.warning(error_info.get('message', str(e)))
+        
+        if error_info.get('suggestion'):
+            st.info(f"💡 {error_info['suggestion']}")
+        
+        # Retry button if applicable
+        if error_info.get('can_retry') and error_info.get('retry_callback'):
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🔄 다시 시도", type="primary"):
+                    error_info['retry_callback']()
+                    st.rerun()
+            with col2:
+                if st.button("← Analyze로 돌아가기"):
+                    st.switch_page("pages/Analyze.py")
+        else:
             if st.button("← Analyze로 돌아가기"):
                 st.switch_page("pages/Analyze.py")
-    else:
+    except Exception as inner_e:
+        # Fallback error display
+        logger.error(f"Error handling failed: {inner_e}", exc_info=True)
+        st.error(f"**예상치 못한 오류가 발생했습니다**")
+        st.warning(f"오류 내용: {str(e)}")
+        st.info("💡 페이지를 새로고침하거나 잠시 후 다시 시도해주세요.")
+        
         if st.button("← Analyze로 돌아가기"):
             st.switch_page("pages/Analyze.py")
 
