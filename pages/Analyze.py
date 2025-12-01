@@ -351,8 +351,9 @@ min_chars = 10
 button_disabled = len(user_input_clean) < min_chars or is_loading
 
 # Analyze Button with better visual feedback
-button_col1, button_col2, button_col3 = st.columns([1, 2, 1])
-with button_col2:
+# Single button centered
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
     analyze_button = st.button(
         "🚀 Analyze Shipment",
         key="analyze_btn",

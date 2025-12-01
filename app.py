@@ -9,26 +9,11 @@ import time
 import hashlib
 
 # ============================================================================
-# Email Collection (이메일 수집 - 베타 단계)
+# Page Flow Control (페이지 흐름 제어)
 # ============================================================================
 
-def collect_email() -> bool:
-    """
-    이메일 주소를 수집하고 세션에 저장하는 함수
-    베타 단계에서는 로그인 없이 이메일만 수집하여 접근 제한
-    
-    Returns:
-        True if email is collected and valid, False otherwise
-    """
-    # 세션 상태 초기화
-    if 'user_email' not in st.session_state:
-        st.session_state['user_email'] = None
-    
-    # 이미 이메일이 수집된 경우
-    if st.session_state.get('user_email'):
-        return True
-    
-    # 이메일 수집 폼 표시
+def show_email_collection_page():
+    """이메일 수집 페이지 표시"""
     st.title("📧 NexSupply 베타 접근")
     st.markdown("""
         <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; 
@@ -57,6 +42,7 @@ def collect_email() -> bool:
             
             # 이메일을 세션 상태에 저장
             st.session_state['user_email'] = email
+            st.session_state['show_landing'] = False  # 랜딩 페이지 표시 안 함
             st.success("✅ 시작합니다! 잠시 후 앱이 로드됩니다.")
             time.sleep(0.5)
             st.rerun()
@@ -64,15 +50,36 @@ def collect_email() -> bool:
     st.markdown("---")
     st.caption("💡 이메일은 분석 결과 저장 및 업데이트 소식 전달에만 사용됩니다.")
     
-    return False
+    if st.button("← 랜딩 페이지로 돌아가기"):
+        st.session_state['show_landing'] = True
+        st.session_state['show_email_page'] = False
+        st.rerun()
 
+# 페이지 상태 초기화
+if 'show_landing' not in st.session_state:
+    st.session_state['show_landing'] = True  # 처음에는 랜딩 페이지 표시
+if 'show_email_page' not in st.session_state:
+    st.session_state['show_email_page'] = False
+if 'user_email' not in st.session_state:
+    st.session_state['user_email'] = None
 
-# 이메일 수집 확인 - 이메일이 없으면 여기서 종료
-if not collect_email():
+# 페이지 흐름 제어
+if st.session_state.get('show_landing', True) and not st.session_state.get('user_email'):
+    # 랜딩 페이지 표시 (이메일이 없을 때만)
+    pass  # 랜딩 페이지는 아래에서 표시됨
+elif not st.session_state.get('user_email'):
+    # 이메일 수집 페이지 표시
+    st.session_state['show_email_page'] = True
+    st.session_state['show_landing'] = False
+    show_email_collection_page()
     st.stop()
+else:
+    # 이메일이 이미 수집된 경우 - 메인 앱 표시
+    st.session_state['show_landing'] = False
+    st.session_state['show_email_page'] = False
 
 # ============================================================================
-# Main Application (이메일 수집 완료 후 접근 가능)
+# Landing Page (랜딩 페이지 - 첫 화면)
 # ============================================================================
 
 # Page configuration
@@ -797,7 +804,14 @@ def main():
             """, unsafe_allow_html=True)
             
             # Button - Start a Free Shipment Analysis (consistent CTA)
-            if st.button("Start a Free Shipment Analysis", use_container_width=True, type="primary", key="hero_analyze_btn", disabled=button_disabled):
+            if st.button("Start a Free Shipment Analysis", use_container_width=True, type="primary", key="hero_analyze_btn", disabled=False):
+                # 랜딩 페이지에서 이메일 수집 페이지로 이동
+                if not st.session_state.get('user_email'):
+                    st.session_state['show_landing'] = False
+                    st.session_state['show_email_page'] = True
+                    st.rerun()
+                else:
+                    st.switch_page("pages/Analyze.py")
                 if hero_product_input and len(hero_product_input.strip()) >= 10:
                     # 입력값 저장
                     st.session_state.user_input = hero_product_input.strip()
@@ -1101,4 +1115,9 @@ def main():
     """, unsafe_allow_html=True)
 
 # Streamlit은 if __name__ == "__main__" 블록을 실행하지 않으므로 직접 호출
-main()
+# 랜딩 페이지를 표시할 때만 main() 실행
+if st.session_state.get('show_landing', True) and not st.session_state.get('user_email'):
+    main()
+elif st.session_state.get('user_email'):
+    # 이메일이 있으면 Analyze 페이지로 리다이렉트
+    st.switch_page("pages/Analyze.py")
