@@ -158,11 +158,11 @@ try:
             update_status(user_friendly_msg, 50, COLOR_CYAN)
             try:
                 from src.ai import analyze_input
-                result = analyze_input(
-                    text=user_input,
-                    api_key=api_key,
-                    use_pipeline=True
-                )
+        result = analyze_input(
+            text=user_input,
+            api_key=api_key,
+            use_pipeline=True
+        )
             except Exception as fallback_error:
                 logging.error(f"Legacy analysis also failed: {fallback_error}")
                 # Show final user-friendly error
@@ -264,11 +264,11 @@ except Exception as e:
     # Show error with retry option
     try:
         error_info = handle_error_with_retry_button(
-            error=e,
+        error=e,
             retry_callback=lambda: st.session_state.update({'analysis_status': None}),
             lang="ko"
-        )
-        
+    )
+    
         # Display error information
         st.error(f"**{error_info.get('title', '오류 발생')}**")
         st.warning(error_info.get('message', str(e)))
@@ -297,5 +297,5 @@ except Exception as e:
         st.info("💡 페이지를 새로고침하거나 잠시 후 다시 시도해주세요.")
         
         if st.button("← Analyze로 돌아가기"):
-            st.switch_page("pages/Analyze.py")
+        st.switch_page("pages/Analyze.py")
 
