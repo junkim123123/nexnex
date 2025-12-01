@@ -18,7 +18,7 @@ if [ "$confirm" != "yes" ]; then
     exit 1
 fi
 
-# 노출된 키
+# 노출된 키 (이전에 노출되었던 키들)
 LEAKED_KEY="AIzaSyBgMc5wI9HpbgfQKcZykcYpItmDiDaR9r4"
 
 # git filter-repo로 키 제거

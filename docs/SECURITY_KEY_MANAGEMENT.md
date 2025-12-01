@@ -73,7 +73,7 @@
 
 ### ❌ 잘못된 예시
 ```markdown
-GEMINI_API_KEY=AIzaSyBgMc5wI9HpbgfQKcZykcYpItmDiDaR9r4
+GEMINI_API_KEY=AIzaSyDCaPPN9g-eiLMkrC6nX0pS8rBqeJLlZRY
 ```
 
 ### ✅ 올바른 예시
