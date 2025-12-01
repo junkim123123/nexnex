@@ -83,7 +83,7 @@ st.markdown("""
                 <p style="color: #94a3b8; margin: 0.5rem 0 0 0; font-size: 0.9rem;">{product_name} • {origin} → {destination} • {channel}</p>
             </div>
             <span style="font-size: 0.85rem; color: #64748b; font-style: italic;">
-                {datetime.now().strftime('%Y-%m-%d %H:%M')}
+                {timestamp}
             </span>
         </div>
     </div>
@@ -92,7 +92,7 @@ st.markdown("""
     origin=origin,
     destination=destination,
     channel=channel,
-    datetime=datetime
+    timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
 ), unsafe_allow_html=True)
 
 # Extract key metrics (must be before Differentiation box)
