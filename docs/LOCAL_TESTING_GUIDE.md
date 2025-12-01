@@ -20,7 +20,7 @@ python -m streamlit --version
 프로젝트 루트에 `.env` 파일이 있어야 합니다:
 
 ```env
-GEMINI_API_KEY=AIzaSyBXVp9Jjd1W6lXD3RE9Z_HWGXT4RvYAHuA
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 ```
 
 ### `.streamlit/secrets.toml` 파일 생성 (로컬 테스트용)
@@ -33,7 +33,7 @@ authorized_users = [
 ]
 
 [external_api]
-gemini_api_key = "AIzaSyBXVp9Jjd1W6lXD3RE9Z_HWGXT4RvYAHuA"
+gemini_api_key = "YOUR_GEMINI_API_KEY_HERE"
 
 [connections.postgresql]
 dialect = "postgresql"
