@@ -3,7 +3,9 @@ Pytest Configuration and Fixtures
 Shared test fixtures and configuration for all tests.
 """
 
+import os
 import pytest
+from unittest.mock import patch
 from core.models import CostBreakdown, ParsedInput, AnalysisResult
 from core.costing import validate_cost_breakdown
 
@@ -63,4 +65,16 @@ def zero_cost_breakdown() -> CostBreakdown:
         duty=0.0,
         misc=0.0
     )
+
+
+@pytest.fixture(autouse=True)
+def mock_gemini_api_key(monkeypatch):
+    """
+    모든 테스트에서 GEMINI_API_KEY를 자동으로 mock하는 fixture
+    실제 API 호출을 방지하기 위해 더미 키를 설정
+    """
+    dummy_key = "TEST_DUMMY_API_KEY_FOR_UNIT_TESTS_ONLY_123456789"
+    monkeypatch.setenv("GEMINI_API_KEY", dummy_key)
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-flash")
+    return dummy_key
 

@@ -121,7 +121,8 @@ class TestSecureLogging:
         logger.addHandler(handler)
         
         # Use a dummy API key for testing (never use real keys in tests)
-        dummy_api_key = "AIzaSyDummyKeyForTesting12345678901234567890"
+        # Note: Changed from "AIzaSy" prefix to avoid security check false positives
+        dummy_api_key = "TEST_DUMMY_API_KEY_FOR_UNIT_TESTS_ONLY_123456789"
         logger.info(f"API key: {dummy_api_key}")
         log_output = log_capture.getvalue()
         

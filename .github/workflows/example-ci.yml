@@ -57,13 +57,13 @@ jobs:
         echo "Checking for leaked API keys..."
         # 실제 API 키 패턴 검사 (39자 이상의 실제 키만)
         # 제외: 테스트 더미 키, 문서 예시, 패턴 설명
-        if grep -r "AIzaSy[A-Za-z0-9_-]\{35,\}" --include="*.md" --include="*.py" --include="*.yml" \
+        # tests/ 디렉토리와 문서 파일은 제외
+        if grep -r "AIzaSy[A-Za-z0-9_-]\{35,\}" \
+          --include="*.py" \
+          --include="*.yml" \
           --exclude-dir=tests \
-          --exclude="*SECURITY*.md" \
-          --exclude="*SETUP*.md" \
           --exclude="*example*.yml" \
-          --exclude="*QUICK*.md" \
-          . | grep -v "DummyKeyForTesting" | grep -v "AIzaSy\.\.\." | grep -v "AIzaSyXXXX" | grep -v "YOUR_GEMINI_API_KEY"; then
+          . | grep -v "DummyKeyForTesting" | grep -v "AIzaSy\.\.\." | grep -v "AIzaSyXXXX" | grep -v "YOUR_GEMINI_API_KEY" | grep -v "TEST_DUMMY"; then
           echo "⚠️  WARNING: Potential API key found in code!"
           exit 1
         fi

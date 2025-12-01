@@ -139,7 +139,7 @@ def parse_volume(text: str, llm_suggestion: Optional[int] = None) -> int:
         except (ValueError, AttributeError):
             pass
     
-    # PRIORITY 2: "Xk" or "X만" patterns (e.g., "50k", "5만")
+    # PRIORITY 2: "Xk" or "X만" patterns (e.g., "50k", "5만", "5만개")
     k_pattern = r'(\d+)k\b'
     k_match = re.search(k_pattern, text_clean, re.IGNORECASE)
     if k_match:
@@ -148,11 +148,12 @@ def parse_volume(text: str, llm_suggestion: Optional[int] = None) -> int:
         except (ValueError, AttributeError):
             pass
     
-    man_pattern = r'(\d+)만\b'
+    # "만" 패턴: "5만", "5만개", "1000만" 등 매칭 (word boundary 제거, 한글 문자 허용)
+    man_pattern = r'(\d+(?:\.\d+)?)\s*만'
     man_match = re.search(man_pattern, text_clean)
     if man_match:
         try:
-            return int(man_match.group(1)) * 10000
+            return int(float(man_match.group(1)) * 10000)
         except (ValueError, AttributeError):
             pass
     

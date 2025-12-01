@@ -5,14 +5,36 @@ Sample Flow Regression Tests - Phase 4
 이 테스트는 분석 엔진의 핵심 기능이 망가지지 않았는지 확인합니다.
 """
 
+import os
 import pytest
+from unittest.mock import patch, MagicMock
 from core.nlp_parser import parse_user_input
 from core.analysis_engine import run_analysis
 from core.errors import ParsingError, NexSupplyError
+from core.models import ShipmentSpec
 
 
 class TestSampleFlows:
     """샘플 입력에 대한 회귀 테스트"""
+    
+    @pytest.fixture(autouse=True)
+    def setup_mock_api(self, monkeypatch):
+        """모든 테스트에서 API 호출을 mock"""
+        # GEMINI_API_KEY 환경 변수 설정
+        monkeypatch.setenv("GEMINI_API_KEY", "TEST_DUMMY_API_KEY_FOR_UNIT_TESTS_ONLY_123456789")
+        
+        # parse_user_input의 AI 호출 부분을 mock
+        def mock_ai_parse(*args, **kwargs):
+            # 간단한 mock 응답 반환 (parse_user_input이 기대하는 형식)
+            return {
+                "detected_volume": 5000,
+                "target_market": "USA",
+                "sales_channel": "Amazon FBA",
+                "product_category": "Snack"
+            }
+        
+        # src.ai_pipeline.parse_user_input을 mock
+        monkeypatch.setattr('core.nlp_parser.ai_parse_user_input', mock_ai_parse)
     
     def test_shrimp_snack_analysis(self):
         """
@@ -26,7 +48,7 @@ class TestSampleFlows:
         """
         user_input = "새우깡 5,000봉지 미국에 4달러에 팔거야"
         
-        # Step 1: 파싱
+        # Step 1: 파싱 (API 호출은 자동으로 mock됨)
         spec = parse_user_input(user_input)
         
         # 검증: ShipmentSpec이 올바르게 생성되었는지
@@ -115,6 +137,7 @@ class TestSampleFlows:
         """
         user_input = "shirt 5000 pieces from Vietnam to USA, $20 retail"
         
+        # API 호출은 자동으로 mock됨
         spec = parse_user_input(user_input)
         result = run_analysis(spec)
         
@@ -140,6 +163,7 @@ class TestSampleFlows:
         """
         user_input = "toy 1000 units from China to USA"
         
+        # API 호출은 자동으로 mock됨
         spec = parse_user_input(user_input)
         # 소매 가격이 없어도 분석은 가능해야 함
         result = run_analysis(spec)
@@ -182,6 +206,7 @@ class TestDataQuality:
         """
         user_input = "새우깡 5,000봉지 미국에 4달러에 팔거야"
         
+        # API 호출은 자동으로 mock됨
         spec = parse_user_input(user_input)
         result = run_analysis(spec)
         
@@ -202,6 +227,7 @@ class TestCostScenarios:
         """
         user_input = "새우깡 5,000봉지 미국에 4달러에 팔거야"
         
+        # API 호출은 자동으로 mock됨
         spec = parse_user_input(user_input)
         result = run_analysis(spec)
         
@@ -219,6 +245,7 @@ class TestCostScenarios:
         """
         user_input = "새우깡 5,000봉지 미국에 4달러에 팔거야"
         
+        # API 호출은 자동으로 mock됨
         spec = parse_user_input(user_input)
         result = run_analysis(spec)
         
@@ -236,6 +263,7 @@ class TestRiskScores:
         """
         user_input = "새우깡 5,000봉지 미국에 4달러에 팔거야"
         
+        # API 호출은 자동으로 mock됨
         spec = parse_user_input(user_input)
         result = run_analysis(spec)
         
@@ -258,6 +286,7 @@ class TestRiskScores:
         """
         user_input = "새우깡 5,000봉지 미국에 4달러에 팔거야"
         
+        # API 호출은 자동으로 mock됨
         spec = parse_user_input(user_input)
         result = run_analysis(spec)
         
